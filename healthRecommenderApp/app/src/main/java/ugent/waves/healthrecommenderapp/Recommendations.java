@@ -35,6 +35,8 @@ public class Recommendations {
     private int hardZone = 8;
     private int maximumZone = 9;
 
+    private int MAXHR = 220 - age;
+
     public Recommendations(GoogleSignInAccount account, Context c, int age){
         this.account = account;
         this.context = c;
@@ -70,7 +72,6 @@ public class Recommendations {
     //TODO: grenzen?
     public double processHeartRateScoreResponse(SessionReadResponse res){
         int score = 0;
-        int MAXHR = 220 - age;
         for(Session s : res.getSessions()){
             for(DataSet ds: res.getDataSet(s)){
                 for(DataPoint dp : ds.getDataPoints()){
@@ -91,6 +92,51 @@ public class Recommendations {
         }
 
         return score;
+    }
+
+    //TODO: check duur 1 dp & tijd tussen 2 opeenvolgende dp
+    public long processMETscore(SessionReadResponse res){
+        int score = 0;
+        int MAXHR = 220 - age;
+        //MPA = ligthzone, MPV = moderate zone
+        double timeMPA, timeMPV;
+        DataPoint dpPrevious = null;
+        long sumMETmin = 0;
+        for(Session s : res.getSessions()){
+            timeMPA = 0;
+            timeMPV = 0;
+            for(DataSet ds: res.getDataSet(s)){
+                for(DataPoint dp : ds.getDataPoints()){
+                    if(dpPrevious != null && (getHeartRateZone(dp.getValue(Field.FIELD_BPM).asFloat()) == getHeartRateZone(dpPrevious.getValue(Field.FIELD_BPM).asFloat()))){
+                        if(getHeartRateZone(dp.getValue(Field.FIELD_BPM).asFloat()) == lightZone){
+                            timeMPA += dp.getEndTime(TimeUnit.MINUTES) - dpPrevious.getEndTime(TimeUnit.MINUTES);
+                        } else if(getHeartRateZone(dp.getValue(Field.FIELD_BPM).asFloat()) == moderateZone){
+                            timeMPV += dp.getEndTime(TimeUnit.MINUTES) - dpPrevious.getEndTime(TimeUnit.MINUTES);
+                        }
+                    }
+
+                    dpPrevious = dp;
+                }
+            }
+            sumMETmin += 4 * timeMPA + 8 * timeMPV;
+        }
+
+        return sumMETmin;
+    }
+
+    private int getHeartRateZone(double v){
+        if( (v >= 0.5*MAXHR) && (v < 0.6*MAXHR) ){
+            return veryLightZone;
+        } else if( (v >= 0.6*MAXHR) && (v < 0.7*MAXHR) ){
+            return lightZone;
+        } else if( (v >= 0.7*MAXHR) && (v < 0.8*MAXHR) ){
+            return moderateZone;
+        } else if( (v >= 0.8*MAXHR) && (v < 0.9*MAXHR) ){
+            return hardZone;
+        } else if( (v >= 0.9*MAXHR) && (v < MAXHR) ){
+            return maximumZone;
+        }
+        return 0;
     }
 
 }
