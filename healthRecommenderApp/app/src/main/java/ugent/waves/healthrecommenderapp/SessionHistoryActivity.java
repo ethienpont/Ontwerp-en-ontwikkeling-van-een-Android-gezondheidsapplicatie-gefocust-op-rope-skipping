@@ -5,10 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentTransaction;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
-import android.Manifest;
 import android.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import android.content.DialogInterface;
@@ -18,30 +15,29 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
-import android.view.View;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.common.Scopes;
 import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.fitness.Fitness;
 import com.google.android.gms.fitness.FitnessOptions;
-import com.google.android.gms.fitness.data.Bucket;
-import com.google.android.gms.fitness.data.DataPoint;
 import com.google.android.gms.fitness.data.DataSet;
 import com.google.android.gms.fitness.data.DataType;
-import com.google.android.gms.fitness.data.Field;
 import com.google.android.gms.fitness.data.Session;
-import com.google.android.gms.fitness.request.DataReadRequest;
 import com.google.android.gms.fitness.request.SessionReadRequest;
-import com.google.android.gms.fitness.result.DataReadResponse;
 import com.google.android.gms.fitness.result.SessionReadResponse;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -49,6 +45,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 public class SessionHistoryActivity extends AppCompatActivity {
@@ -72,12 +69,24 @@ public class SessionHistoryActivity extends AppCompatActivity {
 
     private healthRecommenderApplication app;
 
+    //firebase
+    private FirebaseFirestore db;
+    private FirebaseUser user;
+    private FirebaseAuth mAuth;
+    private GoogleSignInClient mGoogleSignInClient;
+
+    private Random rand;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_session_history);
 
+        //TODO: remove random when done testing
+        rand = new Random();
+
         app = (healthRecommenderApplication) this.getApplicationContext();
+
         //google sign in
         // Set options for Google Sign-In and get client instance
         fitnessOptions = FitnessOptions.builder()
@@ -89,45 +98,24 @@ public class SessionHistoryActivity extends AppCompatActivity {
                 .addDataType(DataType.TYPE_HEART_RATE_BPM, FitnessOptions.ACCESS_READ)
                 .build();
 
-        account = GoogleSignIn.getAccountForExtension(this, fitnessOptions);
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .requestId()
+                .requestIdToken("726533384380-p8e9er5fialjs892tu5c5aub0dgqsbb0.apps.googleusercontent.com")
+                .addExtension(fitnessOptions)
+                .build();
 
-        permissionsGranted = checkAndRequestPermissions();
+        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
-        // Check for necessary permissions (and request in case no permissions were granted)
-        if (permissionsGranted) {
-           // account = GoogleSignIn.getLastSignedInAccount(this);
-            /*
-            if (account == null) {
-                signIn();
-            }*/
-
-            // Add the fragment to the 'fragment_container' FrameLayout
-            switchContent(R.id.container,SessionHistoryListFragment.newInstance(data));
-            //get history data for 1 week
-            initHistoryData();
-
-            Calendar cal = Calendar.getInstance();
-            long end = app.getNowMilliSec(cal);
-            long start = app.getWeeksAgoMilliSec(cal, 3);
-            Recommendations r = new Recommendations(account, this, 21);
-            r.getHistory(start, end, DataType.TYPE_HEART_RATE_BPM)
-                    .addOnSuccessListener(new OnSuccessListener<SessionReadResponse>() {
-                        @Override
-                        public void onSuccess(SessionReadResponse dataReadResponse) {
-                            double score = r.processHeartRateScoreResponse(dataReadResponse);
-                            Log.e(TAG, score+"");
-                        }
-                    });
-
-            r.getHistory(start, end, DataType.TYPE_HEART_POINTS)
-                    .addOnSuccessListener(new OnSuccessListener<SessionReadResponse>() {
-                        @Override
-                        public void onSuccess(SessionReadResponse dataReadResponse) {
-                            double heartpoint = r.processHeartPointResponse(dataReadResponse);
-                            Log.e(TAG, heartpoint+"");
-                        }
-                    });
+        account = GoogleSignIn.getLastSignedInAccount(this);
+        //TODO: check signin flow als account null
+        if(account == null){
+            signIn();
+        } else{
+            permissionsGranted = checkAndRequestPermissions();
+            firebaseAuthWithGoogle(account);
         }
+
     }
 
     @Override
@@ -146,7 +134,67 @@ public class SessionHistoryActivity extends AppCompatActivity {
         super.onStop();
     }
 
-    /*
+    private void accessApp(){
+        // Check for necessary permissions (and request in case no permissions were granted)
+        if (permissionsGranted) {
+            // Add the fragment to the 'fragment_container' FrameLayout
+            switchContent(R.id.container,SessionHistoryListFragment.newInstance(data));
+
+            //initialize firestore db
+            db = FirebaseFirestore.getInstance();
+
+            //get history data for 1 week
+            initHistoryData();
+
+            //TODO: deze logica moet 1 keer per week uitgevoerd worden
+            //TODO: als er te weinig entries zijn, goal in app berekenen
+            Calendar cal = Calendar.getInstance();
+            long end = app.getNowMilliSec(cal);
+            long start = app.getWeeksAgoMilliSec(cal, 3);
+            ScoreCalculation r = new ScoreCalculation(account, this, 21);
+            r.getHistory(start, end, DataType.TYPE_HEART_RATE_BPM)
+                    .addOnSuccessListener(new OnSuccessListener<SessionReadResponse>() {
+                        @Override
+                        public void onSuccess(SessionReadResponse dataReadResponse) {
+                            double score = r.processMETscore(dataReadResponse);
+                            int g = rand.nextInt(700)+100;
+                            int reach = rand.nextInt(g);
+                            Map<String, Object> goal = new HashMap<>();
+                            goal.put("week_number", 0);
+                            goal.put("mets_goal", g);
+                            goal.put("mets_reached", reach);
+
+                            //TODO: firestore populating with testdata
+                            //TODO: document moet naast collectie ook een veld hebben om zichtbaar te zijn
+                            for(int i= 0; i<52; i++){
+                                db.collection("users")
+                                        .document(user.getUid())
+                                        .collection("goals")
+                                        .document(i+"") //TODO: wrong week of year //cal.get(Calendar.WEEK_OF_YEAR)+""
+                                        .set(goal)
+                                        .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                            @Override
+                                            public void onSuccess(Void aVoid) {
+                                                Log.d(TAG, "DocumentSnapshot successfully written!");
+                                            }
+                                        })
+                                        .addOnFailureListener(new OnFailureListener() {
+                                            @Override
+                                            public void onFailure(@NonNull Exception e) {
+                                                Log.w(TAG, "Error writing document", e);
+                                            }
+                                        });
+                                g = rand.nextInt(700)+100;
+                                reach = rand.nextInt(g);
+                                goal.put("week_number", i+1);
+                                goal.put("mets_goal", g);
+                                goal.put("mets_reached", reach);
+                            }
+                        }
+                    });
+        }
+    }
+
     private void signIn() {
         // Launches the sign in flow, the result is returned in onActivityResult
         Intent intent = mGoogleSignInClient.getSignInIntent();
@@ -170,12 +218,14 @@ public class SessionHistoryActivity extends AppCompatActivity {
     private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
         try {
             account = completedTask.getResult(ApiException.class);
+            permissionsGranted = checkAndRequestPermissions();
+            firebaseAuthWithGoogle(account);
         } catch (ApiException e) {
             // The ApiException status code indicates the detailed failure reason.
             // Please refer to the GoogleSignInStatusCodes class reference for more information.
             Log.w("tag", "signInResult:failed code=" + e.getStatusCode());
         }
-    }*/
+    }
 
     // Check permissions
     private boolean checkAndRequestPermissions() {
@@ -369,4 +419,29 @@ public class SessionHistoryActivity extends AppCompatActivity {
         ft.addToBackStack(null);
         ft.commit();
     }
+
+    //TODO: security rules so users can only access their own data
+    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
+        Log.e(TAG, "firebaseAuthWithGoogle:" + acct.getIdToken());
+        mAuth = FirebaseAuth.getInstance();
+
+        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
+        mAuth.signInWithCredential(credential)
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            // Sign in success, update UI with the signed-in user's information
+                            user = mAuth.getCurrentUser();
+                            accessApp();
+                            Log.e(TAG, user.getDisplayName());
+                            Log.d(TAG, "signInWithCredential:success");
+                        } else {
+                            // If sign in fails, display a message to the user.
+                            Log.w(TAG, "signInWithCredential:failure", task.getException());
+                        }
+                    }
+                });
+    }
+
 }
