@@ -272,6 +272,7 @@ X_train, X_test, y_train, y_test = train_test_split(df.drop('activity', axis=1),
 poly = PolynomialFeatures(X_train.shape[1])
 poly.fit_transform(X_train)
 '''
+#TODO: ook y schalen
 scaler = preprocessing.StandardScaler().fit(X_train)
 X_train = pd.DataFrame(scaler.transform(X_train), columns=column_names[2:-1])
 X_test = pd.DataFrame(scaler.transform(X_test), columns=column_names[2:-1])
@@ -402,7 +403,7 @@ print(y_pred)
 #SGD CLASSIFIER
 #hyperparameter tuning
 '''
-param_grid = {'learning_rate': ['constant', 'optimal', 'invscaling', 'adaptive'], 'max_iter': [1, 10, 100, 1000, np.ceil(10**6 / n)], 
+param_grid = {'alpha': [1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1], 'learning_rate': ['constant', 'optimal', 'invscaling', 'adaptive'], 'max_iter': [1, 10, 100, 1000, np.ceil(10**6 / n)], 
     'loss': ['log', 'hinge', 'modified_huber', 'squared_hinge'], 'penalty': ['l2', 'l1', 'elasticnet'],
     'shuffle' : [True]}
 grid = GridSearchCV(SGDClassifier(),param_grid,refit=True,verbose=2)

@@ -8,6 +8,9 @@ import java.util.Date;
 
 public class healthRecommenderApplication extends Application {
 
+    private int weeknr;
+    private int goal;
+
     public Long getNowMilliSec(Calendar cal){
         Date now = new Date();
         /*
@@ -29,5 +32,21 @@ public class healthRecommenderApplication extends Application {
         cal.set(Calendar.MILLISECOND, 0);*/
         Log.e("a", cal.getTime().toString());
         return cal.getTimeInMillis();
+    }
+
+    public int getWeeknr() {
+        return weeknr;
+    }
+
+    public void setWeeknr(int weeknr) {
+        this.weeknr = weeknr;
+    }
+
+    public int getGoal() {
+        return goal;
+    }
+
+    public void setGoal(int goal) {
+        this.goal = goal;
     }
 }

@@ -107,8 +107,8 @@ public class SessionHistoryActivity extends AppCompatActivity {
 
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
-        account = GoogleSignIn.getLastSignedInAccount(this);
-        //TODO: check signin flow als account null
+        //TODO: voor firebase auth moet iedere keer expliciet ingelogd worden...
+        //account = GoogleSignIn.getLastSignedInAccount(this);
         if(account == null){
             signIn();
         } else{
@@ -146,52 +146,8 @@ public class SessionHistoryActivity extends AppCompatActivity {
             //get history data for 1 week
             initHistoryData();
 
-            //TODO: deze logica moet 1 keer per week uitgevoerd worden
-            //TODO: als er te weinig entries zijn, goal in app berekenen
-            Calendar cal = Calendar.getInstance();
-            long end = app.getNowMilliSec(cal);
-            long start = app.getWeeksAgoMilliSec(cal, 3);
-            ScoreCalculation r = new ScoreCalculation(account, this, 21);
-            r.getHistory(start, end, DataType.TYPE_HEART_RATE_BPM)
-                    .addOnSuccessListener(new OnSuccessListener<SessionReadResponse>() {
-                        @Override
-                        public void onSuccess(SessionReadResponse dataReadResponse) {
-                            double score = r.processMETscore(dataReadResponse);
-                            int g = rand.nextInt(700)+100;
-                            int reach = rand.nextInt(g);
-                            Map<String, Object> goal = new HashMap<>();
-                            goal.put("week_number", 0);
-                            goal.put("mets_goal", g);
-                            goal.put("mets_reached", reach);
-
-                            //TODO: firestore populating with testdata
-                            //TODO: document moet naast collectie ook een veld hebben om zichtbaar te zijn
-                            for(int i= 0; i<52; i++){
-                                db.collection("users")
-                                        .document(user.getUid())
-                                        .collection("goals")
-                                        .document(i+"") //TODO: wrong week of year //cal.get(Calendar.WEEK_OF_YEAR)+""
-                                        .set(goal)
-                                        .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                            @Override
-                                            public void onSuccess(Void aVoid) {
-                                                Log.d(TAG, "DocumentSnapshot successfully written!");
-                                            }
-                                        })
-                                        .addOnFailureListener(new OnFailureListener() {
-                                            @Override
-                                            public void onFailure(@NonNull Exception e) {
-                                                Log.w(TAG, "Error writing document", e);
-                                            }
-                                        });
-                                g = rand.nextInt(700)+100;
-                                reach = rand.nextInt(g);
-                                goal.put("week_number", i+1);
-                                goal.put("mets_goal", g);
-                                goal.put("mets_reached", reach);
-                            }
-                        }
-                    });
+            goalHandler h = new goalHandler(db, user, account, this, app);
+            h.setNewGoal(53);
         }
     }
 

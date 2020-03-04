@@ -1,0 +1,12 @@
+VRAGEN
+1. goal predictie in backend met machine learning elke week?
+2. manier om met smartwatch app raw data te krijgen?
+3. schalen vs normalizing
+4. feature extraction zelf?
+5. waarop backend laten draaien?
+6. nodig om y te schalen en normaliseren want is gwn activiteiten gelabeld?
+7. de recommendations moeten de goal voor die week reflecteren dus hoe op voorhand rekening houden met weer/huidige activiteit?
+	in realtime opschuiven kan wss voor conflicten zorgen?
+	functionaliteit om user te laten ingeven wanner beschikbaar en wnnr niet??
+8. beste regressie algo voor goal prediction? 
+9. goal prediction: reinforcement learning of DDN??

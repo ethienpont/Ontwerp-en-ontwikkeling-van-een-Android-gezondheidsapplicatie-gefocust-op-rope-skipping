@@ -38,14 +38,6 @@
             </intent-filter>
         </activity>
 
-        <service android:name="ugent.waves.wearable.accelerometerService"
-            android:process=":sensor">
-            <intent-filter>
-                <action android:name="com.google.android.gms.fitness.service.FitnessSensorService" />
-                <!-- include at least one mimeType filter for the supported data types -->
-                <data android:mimeType="vnd.google.fitness.data_type/com.google.heart_rate.bpm" />
-            </intent-filter>
-        </service>
     </application>
 
 </manifest>

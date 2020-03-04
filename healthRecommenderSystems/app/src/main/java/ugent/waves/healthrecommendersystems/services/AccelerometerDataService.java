@@ -31,7 +31,6 @@ public class AccelerometerDataService extends WearableListenerService {
             FileOutputStream fOut = new FileOutputStream(myFile);
             writer =new OutputStreamWriter(fOut);
             writer.write(String.format(Locale.ENGLISH,"time; x; y; z\n"));
-            //writer = new FileWriter(new File("sensors_" + System.currentTimeMillis() + ".csv"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -44,7 +43,7 @@ public class AccelerometerDataService extends WearableListenerService {
                 FloatBuffer values = ByteBuffer.wrap(messageEvent.getData()).asFloatBuffer();
                 final float[] dst = new float[values.capacity()];
                 values.get(dst);
-                writer.write(String.format(Locale.ENGLISH,"%s; %f; %f; %f\n", new Date((long)dst[0]), dst[1], dst[2], dst[3]));
+                writer.write(String.format(Locale.ENGLISH,"%s; %f; %f; %f\n", (long)dst[0], dst[1], dst[2], dst[3]));
             } catch (IOException e){
                 e.printStackTrace();
             }
