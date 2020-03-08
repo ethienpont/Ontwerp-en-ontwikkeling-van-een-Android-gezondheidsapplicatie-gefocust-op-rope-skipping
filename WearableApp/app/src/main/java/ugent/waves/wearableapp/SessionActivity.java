@@ -2,15 +2,28 @@ package ugent.waves.wearableapp;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
+import android.Manifest;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.wearable.activity.WearableActivity;
 import android.util.Log;
 import android.view.View;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.Scopes;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.fitness.Fitness;
 import com.google.android.gms.fitness.FitnessActivities;
 import com.google.android.gms.fitness.data.DataPoint;
@@ -27,35 +40,64 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class SessionActivity extends WearableActivity {
 
     private String TAG="SessionActivity";
+
     private GoogleSignInAccount account;
     private OnDataPointListener mListener;
 
     private DataSource heartRateDataSource;
     private Session session;
     private String activity;
+    private GoogleSignInClient mGoogleSignInClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_session);
 
+        // Enables Always-on
+        setAmbientEnabled();
+
         Intent intent = getIntent();
         activity = intent.getStringExtra(ActivityListAdapter.ACTIVITY);
 
         account = GoogleSignIn.getLastSignedInAccount(this);
 
-
     }
 
-    private void startSession(String activity, GoogleSignInAccount account) {
+    @Override
+    protected void onResume() {
+        super.onResume();
+        //account = GoogleSignIn.getLastSignedInAccount(this);
+        if (account != null) {
+            initFitnessListener();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterFitnessDataListener();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        unregisterFitnessDataListener();
+        endSession();
+    }
+
+    private void startSession() {
         Fitness.getRecordingClient(this, account)
                 .subscribe(DataType.TYPE_HEART_RATE_BPM)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
@@ -84,11 +126,14 @@ public class SessionActivity extends WearableActivity {
             activityType = FitnessActivities.BIKING;
         } else if (activity.equalsIgnoreCase("badminton")) {
             activityType = FitnessActivities.BADMINTON;
-        } else if (activity.equalsIgnoreCase("other")) {
+        } else {
             activityType = FitnessActivities.OTHER;
         }
 
         session = new Session.Builder()
+                //.setName(startTime+"")
+                //.setIdentifier(startTime+"")
+                //.setDescription(startTime+"")
                 .setStartTime(startTime, TimeUnit.MILLISECONDS)
                 .setActivity(activityType)
                 .build();
@@ -109,9 +154,10 @@ public class SessionActivity extends WearableActivity {
                 });
     }
 
-    private void endSession(final GoogleSignInAccount account) {
+    private void endSession() {
+        Log.e(TAG, session.getActivity());
         Fitness.getSessionsClient(this, account)
-                .stopSession(session.getIdentifier())
+                .stopSession(null)
                 .addOnSuccessListener(new OnSuccessListener<List<Session>>() {
                     @Override
                     public void onSuccess(List<Session> sessions) {
@@ -124,46 +170,6 @@ public class SessionActivity extends WearableActivity {
                         Log.i(TAG, "There was a problem stopping session");
                     }
                 });
-
-        /*
-        DataSet heartRateDataSet = DataSet.create(heartRateDataSource);
-        DataPoint p = DataPoint.builder(heartRateDataSource)
-                .setTimeInterval(session.getStartTime(TimeUnit.MILLISECONDS), session.getEndTime(TimeUnit.MILLISECONDS), TimeUnit.MILLISECONDS)
-                .setTimestamp(new Date().getTime(), TimeUnit.MILLISECONDS)
-                .setField(Field.FIELD_BPM, 65)
-                .build();
-        heartRateDataSet.add(p);
-
-        Session sessionInsert = new Session.Builder()
-                .setName("test")
-                .setDescription("Long run around Shoreline Park")
-                .setIdentifier(session.getIdentifier())
-                .setActivity(FitnessActivities.OTHER)
-                .setStartTime(session.getStartTime(TimeUnit.MILLISECONDS), TimeUnit.MILLISECONDS)
-                .setEndTime(session.getEndTime(TimeUnit.MILLISECONDS), TimeUnit.MILLISECONDS)
-                .build();
-
-        SessionInsertRequest insertRequest = new SessionInsertRequest.Builder()
-                .setSession(sessionInsert)
-                .addDataSet(heartRateDataSet)
-                .build();
-
-        Fitness.getSessionsClient(this, GoogleSignIn.getLastSignedInAccount(this))
-                .insertSession(insertRequest)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        // At this point, the session has been inserted and can be read.
-                        Log.i(TAG, "Session insert was successful!");
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.i(TAG, "There was a problem inserting the session: " +
-                                e.getLocalizedMessage());
-                    }
-                });*/
 
         Fitness.getRecordingClient(this, account)
                 .unsubscribe(DataType.TYPE_HEART_RATE_BPM)
@@ -181,7 +187,7 @@ public class SessionActivity extends WearableActivity {
                 });
     }
 
-    private void initFitnessListener(final GoogleSignInAccount account) {
+    private void initFitnessListener() {
         DataSourcesRequest requestData = new DataSourcesRequest.Builder()
                 .setDataTypes(DataType.TYPE_HEART_RATE_BPM)
                 .setDataSourceTypes(DataSource.TYPE_RAW)
@@ -213,7 +219,7 @@ public class SessionActivity extends WearableActivity {
                     public void onDataPoint(DataPoint dataPoint) {
                         for (Field field : dataPoint.getDataType().getFields()) {
                             Value val = dataPoint.getValue(field);
-                            Log.d(TAG, val.toString());
+                            Log.e(TAG, val.toString());
                         }
                     }
                 };
@@ -224,7 +230,7 @@ public class SessionActivity extends WearableActivity {
                 .setSamplingRate(1, TimeUnit.SECONDS)
                 .build();
 
-        Fitness.getSensorsClient(this, GoogleSignIn.getLastSignedInAccount(this))
+        Fitness.getSensorsClient(this, account)
                 .add(requestSensor, mListener)
                 .addOnCompleteListener(
                         new OnCompleteListener<Void>() {
@@ -247,7 +253,7 @@ public class SessionActivity extends WearableActivity {
         }
 
         // [START unregister_data_listener]
-        Fitness.getSensorsClient(this, GoogleSignIn.getLastSignedInAccount(this))
+        Fitness.getSensorsClient(this, account)
                 .remove(mListener)
                 .addOnCompleteListener(
                         new OnCompleteListener<Boolean>() {
@@ -264,12 +270,12 @@ public class SessionActivity extends WearableActivity {
     }
 
     public void onClickStartSession(View view) {
-        startSession(activity, account);
-        initFitnessListener(account);
+        initFitnessListener();
+        startSession();
     }
 
     public void onClickStopSession(View view) {
-        endSession(account);
         unregisterFitnessDataListener();
+        endSession();
     }
 }

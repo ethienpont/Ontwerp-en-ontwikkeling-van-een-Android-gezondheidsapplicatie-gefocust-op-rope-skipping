@@ -108,12 +108,13 @@ public class SessionHistoryActivity extends AppCompatActivity {
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
         //TODO: voor firebase auth moet iedere keer expliciet ingelogd worden...
-        //account = GoogleSignIn.getLastSignedInAccount(this);
+        account = GoogleSignIn.getLastSignedInAccount(this);
         if(account == null){
             signIn();
         } else{
             permissionsGranted = checkAndRequestPermissions();
-            firebaseAuthWithGoogle(account);
+            //firebaseAuthWithGoogle(account);
+            accessApp();
         }
 
     }
@@ -147,7 +148,8 @@ public class SessionHistoryActivity extends AppCompatActivity {
             initHistoryData();
 
             goalHandler h = new goalHandler(db, user, account, this, app);
-            h.setNewGoal(53);
+            //h.setNewGoal(53);
+            h.calculateNewGoal();
         }
     }
 
@@ -323,6 +325,7 @@ public class SessionHistoryActivity extends AppCompatActivity {
                 .setTimeInterval(startTime, endTime, TimeUnit.MILLISECONDS)
                 .read(DataType.TYPE_HEART_RATE_BPM)
                 .readSessionsFromAllApps()
+                .enableServerQueries()
                 .build();
 
         Fitness.getSessionsClient(this, account)

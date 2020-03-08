@@ -15,8 +15,11 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -30,6 +33,9 @@ public class goalHandler {
     private GoogleSignInAccount account;
     private Context context;
     private Random rand;
+    private ScoreCalculation r;
+
+    private List<Double> score;
 
     public goalHandler(FirebaseFirestore db, FirebaseUser user, GoogleSignInAccount account, Context context, healthRecommenderApplication app){
         this.account = account;
@@ -37,8 +43,12 @@ public class goalHandler {
         this.user = user;
         this.context = context;
         this.app =  app;
+        this.r = new ScoreCalculation(account, context, 21);
+        this.score = new ArrayList<>();
     }
 
+    //GOAL CALULATION IN BACKEND
+    /*
     public void postGoalReached(){
         //TODO: deze logica moet 1 keer per week uitgevoerd worden
         //TODO: als er te weinig entries zijn, goal in app berekenen
@@ -112,5 +122,64 @@ public class goalHandler {
                 }
             }
         });
+    }*/
+
+    private Task<SessionReadResponse> getHistoryOneWeekAgo(){
+        Calendar cal = Calendar.getInstance();
+
+        long end = app.getNowMilliSec(cal);
+        long start = app.getWeeksAgoMilliSec(cal, 1);
+        Log.e("l", "START"+new Date(start).toString());
+        Log.e("l", new Date(end).toString());
+        return r.getHistory(start, end, DataType.TYPE_HEART_RATE_BPM);
+    }
+
+    private Task<SessionReadResponse> getHistoryTwoWeekAgo(){
+        Calendar cal = Calendar.getInstance();
+        app.getNowMilliSec(cal);
+
+        long end = app.getWeeksAgoMilliSec(cal, 1);
+        long start = app.getWeeksAgoMilliSec(cal, 1);
+        Log.e("l","START"+ new Date(start).toString());
+        Log.e("l", new Date(end).toString());
+        return r.getHistory(start, end, DataType.TYPE_HEART_RATE_BPM);
+    }
+
+    private Task<SessionReadResponse> getHistoryThreeWeekAgo(){
+        Calendar cal = Calendar.getInstance();
+        app.getNowMilliSec(cal);
+
+        long end = app.getWeeksAgoMilliSec(cal, 2);
+        long start = app.getWeeksAgoMilliSec(cal, 1);
+        Log.e("l", "START"+new Date(start).toString());
+        Log.e("l", new Date(end).toString());
+        return r.getHistory(start, end, DataType.TYPE_HEART_RATE_BPM);
+    }
+
+    //TODO: nieuwe doel berekenen door gemiddelde te nemen voorbije 3 weken?
+    public void calculateNewGoal(){
+
+        getHistoryOneWeekAgo()
+                .addOnSuccessListener(new OnSuccessListener<SessionReadResponse>() {
+                    @Override
+                    public void onSuccess(SessionReadResponse dataReadResponse) {
+                        score.add(0, r.processMETscore(dataReadResponse));
+                        getHistoryTwoWeekAgo()
+                                .addOnSuccessListener(new OnSuccessListener<SessionReadResponse>() {
+                                    @Override
+                                    public void onSuccess(SessionReadResponse dataReadResponse) {
+                                        score.add(1, r.processMETscore(dataReadResponse));
+                                        getHistoryThreeWeekAgo()
+                                                .addOnSuccessListener(new OnSuccessListener<SessionReadResponse>() {
+                                                    @Override
+                                                    public void onSuccess(SessionReadResponse dataReadResponse) {
+                                                        score.add(2, r.processMETscore(dataReadResponse));
+                                                        app.setGoal((int)(score.get(0) + score.get(1) + score.get(2))/3);
+                                                    }
+                                                });
+                                    }
+                                });
+                    }
+                });
     }
 }

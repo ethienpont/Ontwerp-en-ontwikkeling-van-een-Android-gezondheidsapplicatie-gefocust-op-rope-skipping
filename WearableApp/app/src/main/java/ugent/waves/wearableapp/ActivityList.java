@@ -11,6 +11,7 @@ import android.app.Activity;
 import android.provider.Settings;
 import android.support.wearable.activity.WearableActivity;
 import android.util.Log;
+import android.view.View;
 
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -21,12 +22,29 @@ import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.Scopes;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.Scope;
+import com.google.android.gms.fitness.Fitness;
+import com.google.android.gms.fitness.FitnessActivities;
+import com.google.android.gms.fitness.data.DataPoint;
+import com.google.android.gms.fitness.data.DataSource;
+import com.google.android.gms.fitness.data.DataType;
+import com.google.android.gms.fitness.data.Field;
+import com.google.android.gms.fitness.data.Session;
+import com.google.android.gms.fitness.data.Value;
+import com.google.android.gms.fitness.request.DataSourcesRequest;
+import com.google.android.gms.fitness.request.OnDataPointListener;
+import com.google.android.gms.fitness.request.SensorRequest;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -48,6 +66,12 @@ public class ActivityList extends WearableActivity {
     private GoogleSignInClient mGoogleSignInClient;
     private GoogleSignInAccount account;
 
+    private OnDataPointListener mListener;
+
+    private DataSource heartRateDataSource;
+    private Session session;
+    private String activity;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -65,12 +89,12 @@ public class ActivityList extends WearableActivity {
                 .requestScopes(new Scope(Scopes.FITNESS_LOCATION_READ_WRITE))
                 .build();
 
-        mGoogleSignInClient = GoogleSignIn.getClient(this, options);
+        mGoogleSignInClient = GoogleSignIn.getClient(getApplicationContext(), options);
 
         // Check for necessary permissions (and request in case no permissions were granted)
         if (checkAndRequestPermissions()) {
             // Check if Google account is signed in
-            account = GoogleSignIn.getLastSignedInAccount(this);
+            account = GoogleSignIn.getLastSignedInAccount(getApplicationContext());
             if (account == null) {
                 signIn();
             }
@@ -78,7 +102,7 @@ public class ActivityList extends WearableActivity {
 
         WearableRecyclerView recyclerView = findViewById(R.id.recycler_launcher_view);
 
-        ActivityListData[] myListData = new ActivityListData[] {
+        ActivityListData[] myListData = new ActivityListData[]{
                 new ActivityListData("running", R.drawable.running),
                 new ActivityListData("biking", R.drawable.biking),
                 new ActivityListData("badminton", R.drawable.badminton),
@@ -175,7 +199,7 @@ public class ActivityList extends WearableActivity {
                 }
             }
             // At least one or all permissions are denied --> Ask again with rationale
-            if(permissionResults.keySet().size() > 0) {
+            if (permissionResults.keySet().size() > 0) {
                 for (Map.Entry<String, Integer> entry : permissionResults.entrySet()) {
                     String permName = entry.getKey();
                     int permResult = entry.getValue();

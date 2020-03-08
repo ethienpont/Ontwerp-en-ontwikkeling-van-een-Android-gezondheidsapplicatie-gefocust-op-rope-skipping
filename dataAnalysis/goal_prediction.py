@@ -144,44 +144,6 @@ for user in users:
     doc = lastWeek[user]+1
     store.collection('users', user+"", 'goals').document(str(doc)).set({"week_number": lastWeek[user]+1, "mets_goal": int(y_pred[0])})
 
-'''
-#File Format: week_start; week_end; mets_reached; mets_goal
-def read_data(file_path, column_names):
-    data = pd.read_csv(file_path, sep=',', header=0, skipinitialspace=True)
-
-    #convert day to date
-    #data['day'] = data['day'].apply(convert_to_datetime)
-    data['week_start'] = pd.to_datetime(data['week_start'])
-    data['week_end'] = pd.to_datetime(data['week_end'])
-
-    #convert to same data type
-    for i in range(2, 3):
-        data[column_names[i]] = data[column_names[i]].apply(convert_to_float)
-
-    data['mets_percentage'] = data['mets_reached']/data['mets_goal']
-    data.drop('mets_reached', axis=1, inplace=True)
-
-    X_train, X_test, y_train, y_test = train_test_split(data.loc[:,['week_start','week_end', 'mets_percentage']], data['mets_goal'], test_size = 0.33, random_state = 42)
-
-    #scaler = preprocessing.StandardScaler().fit(X_train)
-
-    #normalize features
-    #scaler.transform(X_train)
-
-    #drop rows with NaN values
-    X_train.dropna(axis=0, how='any', inplace=True) #TODO: invullen met mean, mod of median / interpolatie
-
-    #drop duplicates
-    X_train.drop_duplicates(subset=None, keep='first', inplace = True)
-
-    return X_train, X_test, y_train, y_test
-'''
-def convert_to_datetime(x):
-    dt = datetime.fromtimestamp(x // 1000000000)
-    s = dt.strftime('%Y-%m-%d %H:%M:%S')
-    s += '.' + str(int(x % 1000000000)).zfill(9)
-    return s
 
 
-#X_train, X_test, y_train, y_test = read_data('data/goal_test_data.csv', ['week_start', 'week_end', 'mets_reached', 'mets_goal'])
 

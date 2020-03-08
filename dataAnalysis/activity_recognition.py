@@ -160,11 +160,6 @@ def get_tilt_angle(df):
 '''
 #TODO: 2 methodes geven andere waarden, beter onderzoeken
 def get_power_spectral_density(df):
-    psd = []
-    for i in range(1, len(df.columns)):
-        f, Pxx_den = signal.welch(df.iloc[:,i], 18)
-        psd.append(Pxx_den.sum())
-    return psd
     df_psd = np.abs(df)**2
     return df_psd.sum()
 
@@ -176,8 +171,6 @@ def get_entropy(df):
         entropy.append(np.complex(-np.nansum(pdf.iloc[:,i] * np.log2(pdf.iloc[:,i]))))
     return entropy
 
-def get_energy(df):
-    return (np.abs(df)**2).sum()
 
 column_names_org = ['time', 'x', 'y', 'z']
 

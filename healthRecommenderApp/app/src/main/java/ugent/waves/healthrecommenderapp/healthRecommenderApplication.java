@@ -30,7 +30,6 @@ public class healthRecommenderApplication extends Application {
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         cal.set(Calendar.MILLISECOND, 0);*/
-        Log.e("a", cal.getTime().toString());
         return cal.getTimeInMillis();
     }
 
