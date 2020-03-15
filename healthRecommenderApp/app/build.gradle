@@ -1,5 +1,6 @@
 apply plugin: 'com.android.application'
 apply plugin: 'com.google.gms.google-services'  // Google Services plugin
+//apply plugin: 'com.android.databinding'
 
 android {
     compileSdkVersion 29
@@ -20,6 +21,9 @@ android {
     compileOptions {
         sourceCompatibility = '1.8'
         targetCompatibility = '1.8'
+    }
+    dataBinding{
+        enabled=true
     }
 }
 

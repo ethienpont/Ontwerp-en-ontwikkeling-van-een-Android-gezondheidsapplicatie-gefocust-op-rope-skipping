@@ -37,6 +37,10 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.GoogleAuthProvider;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -71,6 +75,8 @@ public class ActivityList extends WearableActivity {
     private DataSource heartRateDataSource;
     private Session session;
     private String activity;
+    private FirebaseAuth mAuth;
+    private wearableAppApplication app;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,10 +86,14 @@ public class ActivityList extends WearableActivity {
         // Enables Always-on
         setAmbientEnabled();
 
+        app = (wearableAppApplication) this.getApplicationContext();
+
         // Set options for Google Sign-In and get client instance
         GoogleSignInOptions options = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestEmail()
                 .requestProfile()
+                .requestEmail()
+                .requestId()
+                .requestIdToken("726533384380-p8e9er5fialjs892tu5c5aub0dgqsbb0.apps.googleusercontent.com")
                 .requestScopes(new Scope(Scopes.FITNESS_ACTIVITY_READ_WRITE))
                 .requestScopes(new Scope(Scopes.FITNESS_BODY_READ))
                 .requestScopes(new Scope(Scopes.FITNESS_LOCATION_READ_WRITE))
@@ -94,9 +104,11 @@ public class ActivityList extends WearableActivity {
         // Check for necessary permissions (and request in case no permissions were granted)
         if (checkAndRequestPermissions()) {
             // Check if Google account is signed in
-            account = GoogleSignIn.getLastSignedInAccount(getApplicationContext());
+            //account = GoogleSignIn.getLastSignedInAccount(getApplicationContext());
             if (account == null) {
                 signIn();
+            } else{
+                firebaseAuthWithGoogle(account);
             }
         }
 
@@ -119,7 +131,7 @@ public class ActivityList extends WearableActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        account = GoogleSignIn.getLastSignedInAccount(this);
+        //account = GoogleSignIn.getLastSignedInAccount(this);
     }
 
     @Override
@@ -130,6 +142,23 @@ public class ActivityList extends WearableActivity {
     @Override
     protected void onStop() {
         super.onStop();
+        Disconnect_google();
+    }
+
+    public void Disconnect_google() {
+        try {
+            if (mGoogleSignInClient != null) {
+                mGoogleSignInClient.signOut()
+                        .addOnSuccessListener(new OnSuccessListener<Void>() {
+                            @Override
+                            public void onSuccess(Void aVoid) {
+                                Log.d(TAG, "gelukt");
+                            }
+                        });
+            }
+        } catch (Exception e) {
+            Log.d("DISCONNECT ERROR", e.toString());
+        }
     }
 
     private void signIn() {
@@ -154,7 +183,8 @@ public class ActivityList extends WearableActivity {
 
     private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
         try {
-            GoogleSignInAccount account = completedTask.getResult(ApiException.class);
+            account = completedTask.getResult(ApiException.class);
+            firebaseAuthWithGoogle(account);
         } catch (ApiException e) {
             // The ApiException status code indicates the detailed failure reason.
             // Please refer to the GoogleSignInStatusCodes class reference for more information.
@@ -270,5 +300,28 @@ public class ActivityList extends WearableActivity {
         AlertDialog dialog = builder.create();
         dialog.show();
         return dialog;
+    }
+
+    //TODO: security rules so users can only access their own data
+    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
+        Log.e(TAG, "firebaseAuthWithGoogle:" + acct.getIdToken());
+        mAuth = FirebaseAuth.getInstance();
+
+        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
+        mAuth.signInWithCredential(credential)
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            // Sign in success, update UI with the signed-in user's information
+                            app.setUser(mAuth.getCurrentUser());
+                            Log.e(TAG, app.getUser().getDisplayName());
+                            Log.d(TAG, "signInWithCredential:success");
+                        } else {
+                            // If sign in fails, display a message to the user.
+                            Log.w(TAG, "signInWithCredential:failure", task.getException());
+                        }
+                    }
+                });
     }
 }

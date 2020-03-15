@@ -3,15 +3,23 @@ package ugent.waves.healthrecommenderapp;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentTransaction;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.media.RingtoneManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
@@ -28,6 +36,10 @@ import com.google.android.gms.fitness.data.DataType;
 import com.google.android.gms.fitness.data.Session;
 import com.google.android.gms.fitness.request.SessionReadRequest;
 import com.google.android.gms.fitness.result.SessionReadResponse;
+import com.google.android.gms.location.ActivityRecognition;
+import com.google.android.gms.location.ActivityTransition;
+import com.google.android.gms.location.ActivityTransitionRequest;
+import com.google.android.gms.location.DetectedActivity;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -37,7 +49,10 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -76,6 +91,8 @@ public class SessionHistoryActivity extends AppCompatActivity {
     private GoogleSignInClient mGoogleSignInClient;
 
     private Random rand;
+    private ArrayList<ActivityTransition> transitions;
+    private PendingIntent pendingIntent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,15 +125,71 @@ public class SessionHistoryActivity extends AppCompatActivity {
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
         //TODO: voor firebase auth moet iedere keer expliciet ingelogd worden...
-        account = GoogleSignIn.getLastSignedInAccount(this);
+        //account = GoogleSignIn.getLastSignedInAccount(this);
         if(account == null){
             signIn();
         } else{
             permissionsGranted = checkAndRequestPermissions();
-            //firebaseAuthWithGoogle(account);
+            firebaseAuthWithGoogle(account);
             accessApp();
         }
 
+    }
+
+    private void sendRecommendation(int rank){
+        db.collection("users")
+                .document("testUser")
+                .collection("recommendations")
+                .whereEqualTo("rank", 0)
+                .get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot d) {
+                        for(DocumentSnapshot doc : d.getDocuments()){
+                            String activity = (String) doc.get("activity");
+                            Double duration = (Double) doc.get("duration");
+                            sendNotification(activity+duration);
+                        }
+                        //TODO: update rank
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.w("l", "Error writing document", e);
+                    }
+                });
+    }
+
+    private void sendNotification(String messageBody) {
+        Intent intent = new Intent(this, SessionHistoryActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 , intent,
+                PendingIntent.FLAG_ONE_SHOT);
+
+        String channelId = "id";
+        Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        NotificationCompat.Builder notificationBuilder =
+                new NotificationCompat.Builder(this, channelId)
+                        .setSmallIcon(R.drawable.badminton)
+                        .setContentTitle("notification")
+                        .setContentText(messageBody)
+                        .setAutoCancel(true)
+                        .setSound(defaultSoundUri)
+                        .setContentIntent(pendingIntent);
+
+        NotificationManager notificationManager =
+                (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+
+        // Since android Oreo notification channel is needed.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(channelId,
+                    "Channel human readable title",
+                    NotificationManager.IMPORTANCE_DEFAULT);
+            notificationManager.createNotificationChannel(channel);
+        }
+
+        notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
     }
 
     @Override
@@ -133,6 +206,21 @@ public class SessionHistoryActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
+        /*
+        ActivityRecognition.getClient(this)
+                .removeActivityTransitionUpdates(pendingIntent)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Log.e(TAG, "suc");
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.e(TAG, "suc");
+                    }
+                });*/
     }
 
     private void accessApp(){
@@ -140,16 +228,87 @@ public class SessionHistoryActivity extends AppCompatActivity {
         if (permissionsGranted) {
             // Add the fragment to the 'fragment_container' FrameLayout
             switchContent(R.id.container,SessionHistoryListFragment.newInstance(data));
-
+            
             //initialize firestore db
             db = FirebaseFirestore.getInstance();
+
+            sendRecommendation(0);
 
             //get history data for 1 week
             initHistoryData();
 
             goalHandler h = new goalHandler(db, user, account, this, app);
+
+            db.collection("users")
+                    .document("testUser")
+                    .collection("sessionCalculations")
+                    .get()
+                    .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                        @Override
+                        public void onSuccess(QuerySnapshot d) {
+                            for(DocumentSnapshot doc : d.getDocuments()){
+                                String activity = "rope skipping";
+                                int imgId = getImage(activity);
+                                long start = 112;
+                                long end = 112;
+                                String turns = doc.get("turns") == null ? null : doc.get("turns").toString();
+                                String mets = doc.get("met_points") == null ? null : doc.get("met_points").toString();
+                                List<DataSet> dataSets = null;
+                                SessionHistoryData s = new SessionHistoryData(activity, imgId, start, end, dataSets, turns, mets);
+                                data.add(s);
+                            }
+                            showRecyclerView();
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Log.w("l", "Error writing document", e);
+                        }
+                    });
+
+            transitions = new ArrayList<>();
+            //detect when user can't or should perform a physical activity
+            transitions.add(
+                    new ActivityTransition.Builder()
+                            .setActivityType(DetectedActivity.IN_VEHICLE)
+                            .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
+                            .build());
+
+            transitions.add(
+                    new ActivityTransition.Builder()
+                            .setActivityType(DetectedActivity.IN_VEHICLE)
+                            .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
+                            .build());
+
+            transitions.add(
+                    new ActivityTransition.Builder()
+                            .setActivityType(DetectedActivity.STILL)
+                            .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
+                            .build());
+
+            transitions.add(
+                    new ActivityTransition.Builder()
+                            .setActivityType(DetectedActivity.STILL)
+                            .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
+                            .build());
+
+            Intent i = new Intent(this, userActivityService.class);
+            i.setAction("ACTIVITY_RECOGNITION");
+
+            pendingIntent = PendingIntent.getBroadcast(this, 7, i, PendingIntent.FLAG_UPDATE_CURRENT);
+
+            ActivityRecognition.getClient(this)
+                    .requestActivityUpdates(1000, pendingIntent)
+                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            Log.d(TAG, "");
+                        }
+                    });
+
             //h.setNewGoal(53);
-            h.calculateNewGoal();
+            //h.calculateNewGoal();
         }
     }
 
@@ -340,7 +499,7 @@ public class SessionHistoryActivity extends AppCompatActivity {
                             long start = session.getStartTime(TimeUnit.MILLISECONDS);
                             long end = session.getEndTime(TimeUnit.MILLISECONDS);
                             List<DataSet> dataSets = sessionReadResponse.getDataSet(session);
-                            SessionHistoryData s = new SessionHistoryData(activity, imgId, start, end, dataSets);
+                            SessionHistoryData s = new SessionHistoryData(activity, imgId, start, end, dataSets, null, null);
                             data.add(s);
                         }
                         showRecyclerView();

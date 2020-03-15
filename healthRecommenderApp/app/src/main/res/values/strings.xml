@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">healthRecommenderApp</string>
+    <string name="rope_skipping">rope skipping</string>
 </resources>

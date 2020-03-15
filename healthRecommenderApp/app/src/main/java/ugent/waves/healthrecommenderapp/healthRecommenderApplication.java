@@ -8,8 +8,10 @@ import java.util.Date;
 
 public class healthRecommenderApplication extends Application {
 
+    //TODO: iedere week resetten
     private int weeknr;
     private int goal;
+    private int rank;
 
     public Long getNowMilliSec(Calendar cal){
         Date now = new Date();

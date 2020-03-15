@@ -12,7 +12,10 @@ import com.google.android.gms.fitness.data.DataSet;
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.databinding.DataBindingUtil;
+import androidx.databinding.ViewDataBinding;
 import androidx.fragment.app.Fragment;
+import ugent.waves.healthrecommenderapp.databinding.SessionHistoryFragmentBinding;
 
 public class SessionHistoryFragment extends Fragment {
 
@@ -25,7 +28,10 @@ public class SessionHistoryFragment extends Fragment {
 
         data = getArguments().<SessionHistoryData>getParcelable(ARG_DATA);
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.session_history_fragment, container, false);
+        SessionHistoryFragmentBinding binding = DataBindingUtil.inflate(inflater, R.layout.session_history_fragment, container, false);
+        View view = binding.getRoot();
+        binding.setSessionData(data);
+        return view;
 
     }
 

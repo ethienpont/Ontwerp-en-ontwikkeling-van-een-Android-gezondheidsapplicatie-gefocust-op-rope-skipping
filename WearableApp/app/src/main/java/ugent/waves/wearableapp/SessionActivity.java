@@ -1,15 +1,26 @@
 package ugent.waves.wearableapp;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
+import androidx.wear.ambient.AmbientMode;
+import androidx.wear.ambient.AmbientModeSupport;
 
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -39,6 +50,15 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -46,9 +66,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-public class SessionActivity extends WearableActivity {
+public class SessionActivity extends FragmentActivity implements SensorEventListener, AmbientMode.AmbientCallbackProvider {
 
     private String TAG="SessionActivity";
 
@@ -60,19 +81,39 @@ public class SessionActivity extends WearableActivity {
     private String activity;
     private GoogleSignInClient mGoogleSignInClient;
 
+    private DatabaseReference mDatabase;
+    private FirebaseUser user;
+    private FirebaseAuth mAuth;
+    private SensorManager sensorManager;
+    private Sensor acceleroSensor;
+    private FirebaseFirestore firestore;
+    private List<Map> accelero_dataPoints;
+    private List<Map> heart_rate_dataPoints;
+    private String currentSession;
+    private AmbientModeSupport.AmbientController ambientController;
+    private Map<String,Object> sessionData;
+    private Sensor heartRateSensor;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_session);
 
         // Enables Always-on
-        setAmbientEnabled();
+        ambientController = AmbientModeSupport.attach(this);
 
         Intent intent = getIntent();
         activity = intent.getStringExtra(ActivityListAdapter.ACTIVITY);
 
-        account = GoogleSignIn.getLastSignedInAccount(this);
+        //account = GoogleSignIn.getLastSignedInAccount(this);
 
+        //mDatabase = FirebaseDatabase.getInstance().getReference();
+
+        firestore = FirebaseFirestore.getInstance();
+
+        sensorManager = (SensorManager) getSystemService(this.SENSOR_SERVICE);
+        acceleroSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        heartRateSensor = sensorManager.getDefaultSensor(Sensor.TYPE_HEART_BEAT);
     }
 
     @Override
@@ -87,14 +128,14 @@ public class SessionActivity extends WearableActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        unregisterFitnessDataListener();
+        //unregisterFitnessDataListener();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        unregisterFitnessDataListener();
-        endSession();
+        //unregisterFitnessDataListener();
+        //endSession();
     }
 
     private void startSession() {
@@ -269,13 +310,194 @@ public class SessionActivity extends WearableActivity {
         // [END unregister_data_listener]
     }
 
+    private void startRopeSkippingSession() {
+        accelero_dataPoints = new ArrayList<>();
+        heart_rate_dataPoints = new ArrayList<>();
+        sensorManager.registerListener(this, acceleroSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this, heartRateSensor, SensorManager.SENSOR_DELAY_NORMAL);
+    }
+
+    private void endRopeSkippingSession() {
+        sensorManager.unregisterListener(this);
+        currentSession = UUID.randomUUID().toString();
+        //ACCELEROMETER
+        for(Map point : accelero_dataPoints){
+            firestore.collection("users")
+                    .document("testUser")
+                    .collection("sessions")
+                    .document("rope_skipping_accelerometer")
+                    .collection(currentSession)
+                    .add(point)
+                    .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                        @Override
+                        public void onSuccess(DocumentReference documentReference) {
+                            Log.d(TAG, "DocumentSnapshot added with ID: " + documentReference.getId());
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Log.w(TAG, "Error adding document", e);
+                        }
+                    });
+        }
+        HashMap<String,Object> sessionId = new HashMap<>();
+        sessionId.put("id",currentSession);
+        firestore.collection("users")
+                .document("testUser")
+                .collection("sessions")
+                .document("rope_skipping_accelerometer")
+                .collection("session_ids")
+                .add(sessionId)
+                .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                    @Override
+                    public void onSuccess(DocumentReference documentReference) {
+                        Log.d(TAG, "DocumentSnapshot added with ID: " + documentReference.getId());
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.w(TAG, "Error adding document", e);
+                    }
+                });
+        firestore.collection("users")
+                .document("testUser")
+                .collection("sessionCalculations")
+                .document(currentSession)
+                .set(sessionId)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Log.w(TAG, "Error adding document");
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.w(TAG, "Error adding document", e);
+                    }
+                });
+
+        //HEART RATE
+        for(Map point : heart_rate_dataPoints){
+            firestore.collection("users")
+                    .document("testUser")
+                    .collection("sessions")
+                    .document("rope_skipping_heart_rate")
+                    .collection(currentSession)
+                    .add(point)
+                    .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                        @Override
+                        public void onSuccess(DocumentReference documentReference) {
+                            Log.d(TAG, "DocumentSnapshot added with ID: " + documentReference.getId());
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Log.w(TAG, "Error adding document", e);
+                        }
+                    });
+        }
+        /*TODO: niet hier history opvragen
+        final DocumentReference docRef = firestore.collection("users")
+                .document("testUser")
+                .collection("sessionCalculations")
+                .document(currentSession);
+        docRef.addSnapshotListener(new EventListener<DocumentSnapshot>() {
+            @Override
+            public void onEvent(@Nullable DocumentSnapshot snapshot,
+                                @Nullable FirebaseFirestoreException e) {
+                if (e != null) {
+                    Log.w(TAG, "Listen failed.", e);
+                    return;
+                }
+
+                String source = snapshot != null && snapshot.getMetadata().hasPendingWrites()
+                        ? "Local" : "Server";
+
+                if (snapshot != null && snapshot.exists() && source.equals("Server")) {
+                    Log.d(TAG, "Current data: " + snapshot.getData());
+                    sessionData = snapshot.getData();
+                } else {
+                    Log.d(TAG, "Current data: null");
+                }
+            }
+        });*/
+    }
+
+    public void switchContent(int id, Fragment fragment) {
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        ft.replace(id, fragment, fragment.toString());
+        ft.addToBackStack(null);
+        ft.commit();
+    }
+
     public void onClickStartSession(View view) {
-        initFitnessListener();
-        startSession();
+        if(activity.equals("rope skipping")){
+            startRopeSkippingSession();
+        } else{
+            initFitnessListener();
+            startSession();
+        }
     }
 
     public void onClickStopSession(View view) {
-        unregisterFitnessDataListener();
-        endSession();
+        if(activity.equals("rope skipping")){
+            endRopeSkippingSession();
+        } else{
+            unregisterFitnessDataListener();
+            endSession();
+        }
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
+            Map<String, Object> dataPoint = new HashMap<>();
+            dataPoint.put("time", System.nanoTime());
+            dataPoint.put("x", event.values[0]);
+            dataPoint.put("y", event.values[1]);
+            dataPoint.put("z", event.values[2]);
+            accelero_dataPoints.add(dataPoint);
+        } else if(event.sensor.getType() == Sensor.TYPE_HEART_BEAT){
+            Map<String, Object> dataPoint = new HashMap<>();
+            dataPoint.put("time", System.nanoTime());
+            dataPoint.put("heart_rate", event.values[0]);
+            heart_rate_dataPoints.add(dataPoint);
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+    }
+
+    @Override
+    public AmbientMode.AmbientCallback getAmbientCallback() {
+        return new MyAmbientCallback();
+    }
+
+    //TODO: hier niet history sessies tonen
+    public void onClickData(View view) {
+        switchContent(R.id.container,SessionFragment.newInstance(sessionData));
+    }
+
+    private class MyAmbientCallback extends AmbientMode.AmbientCallback {
+        @Override
+        public void onEnterAmbient(Bundle ambientDetails) {
+            // Handle entering ambient mode
+        }
+
+        @Override
+        public void onExitAmbient() {
+            // Handle exiting ambient mode
+        }
+
+        @Override
+        public void onUpdateAmbient() {
+            // Update the content
+        }
     }
 }
