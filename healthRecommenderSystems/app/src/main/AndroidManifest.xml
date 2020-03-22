@@ -27,8 +27,6 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".services.ActivityRecognizedService" />
-        <service android:name=".services.SensorBackgroundService" />
         <service android:name=".services.AccelerometerDataService">
             <intent-filter>
                 <!-- listeners receive events that match the action and data filters -->

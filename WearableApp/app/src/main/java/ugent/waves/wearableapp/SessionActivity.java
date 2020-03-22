@@ -60,6 +60,13 @@ import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 
+import org.tensorflow.lite.Interpreter;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -121,7 +128,7 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
         super.onResume();
         //account = GoogleSignIn.getLastSignedInAccount(this);
         if (account != null) {
-            initFitnessListener();
+            //initFitnessListener();
         }
     }
 
@@ -138,6 +145,7 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
         //endSession();
     }
 
+    /* TODO: GOOGLE FIT
     private void startSession() {
         Fitness.getRecordingClient(this, account)
                 .subscribe(DataType.TYPE_HEART_RATE_BPM)
@@ -310,6 +318,7 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
         // [END unregister_data_listener]
     }
 
+*/
     private void startRopeSkippingSession() {
         accelero_dataPoints = new ArrayList<>();
         heart_rate_dataPoints = new ArrayList<>();
@@ -320,7 +329,23 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
     private void endRopeSkippingSession() {
         sensorManager.unregisterListener(this);
         currentSession = UUID.randomUUID().toString();
+
+        FileInputStream f_input_stream= null;
+        try {
+            f_input_stream = new FileInputStream(new File("file:///android_asset/converted_model.tflite"));
+            FileChannel f_channel = f_input_stream.getChannel();
+            MappedByteBuffer tflite_model = f_channel.map(FileChannel.MapMode.READ_ONLY, 0, f_channel.size());
+            Interpreter interpreter = new Interpreter(new File("C:\\Users\\Elise\\Documents\\unif\\master\\semester2\\masterproef\\gitProject\\thesis\\rope_skipping.tflite"))) {
+                //interpreter.run(input, output);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        try (Interpreter interpreter = new Interpreter(new File("C:\\Users\\Elise\\Documents\\unif\\master\\semester2\\masterproef\\gitProject\\thesis\\rope_skipping.tflite"))) {
+            //interpreter.run(input, output);
+        }
         //ACCELEROMETER
+        /*
         for(Map point : accelero_dataPoints){
             firestore.collection("users")
                     .document("testUser")
@@ -399,7 +424,7 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
                             Log.w(TAG, "Error adding document", e);
                         }
                     });
-        }
+        }*/
         /*TODO: niet hier history opvragen
         final DocumentReference docRef = firestore.collection("users")
                 .document("testUser")
@@ -434,21 +459,23 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
         ft.commit();
     }
 
+
     public void onClickStartSession(View view) {
         if(activity.equals("rope skipping")){
             startRopeSkippingSession();
         } else{
-            initFitnessListener();
-            startSession();
+            //initFitnessListener();
+            //startSession();
         }
     }
+
 
     public void onClickStopSession(View view) {
         if(activity.equals("rope skipping")){
             endRopeSkippingSession();
         } else{
-            unregisterFitnessDataListener();
-            endSession();
+            //unregisterFitnessDataListener();
+            //endSession();
         }
     }
 
