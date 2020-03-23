@@ -1,4 +1,4 @@
-package ugent.waves.healthrecommenderapp;
+package ugent.waves.healthrecommenderapp.Services;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

@@ -4,7 +4,7 @@ apply plugin: 'com.google.gms.google-services'  // Google Services plugin
 android {
     compileSdkVersion 29
     defaultConfig {
-        applicationId "ugent.waves.wearableapp"
+        applicationId "ugent.waves.healthrecommenderapp"
         minSdkVersion 26
         targetSdkVersion 29
         versionCode 1

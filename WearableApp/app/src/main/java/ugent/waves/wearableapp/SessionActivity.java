@@ -50,6 +50,10 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.wearable.MessageClient;
+import com.google.android.gms.wearable.Node;
+import com.google.android.gms.wearable.NodeClient;
+import com.google.android.gms.wearable.Wearable;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
@@ -65,6 +69,8 @@ import org.tensorflow.lite.Interpreter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
@@ -79,6 +85,7 @@ import java.util.concurrent.TimeUnit;
 public class SessionActivity extends FragmentActivity implements SensorEventListener, AmbientMode.AmbientCallbackProvider {
 
     private String TAG="SessionActivity";
+    private String ACCELEROMETER = "/ACCELEROMETER";
 
     private GoogleSignInAccount account;
     private OnDataPointListener mListener;
@@ -100,6 +107,9 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
     private AmbientModeSupport.AmbientController ambientController;
     private Map<String,Object> sessionData;
     private Sensor heartRateSensor;
+    private NodeClient nodeClient;
+    private MessageClient messageClient;
+    private String ACCELEROMETER_STOP = "/ACCELEROMETER_STOP";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -112,15 +122,14 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
         Intent intent = getIntent();
         activity = intent.getStringExtra(ActivityListAdapter.ACTIVITY);
 
-        //account = GoogleSignIn.getLastSignedInAccount(this);
-
-        //mDatabase = FirebaseDatabase.getInstance().getReference();
-
         firestore = FirebaseFirestore.getInstance();
 
         sensorManager = (SensorManager) getSystemService(this.SENSOR_SERVICE);
         acceleroSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         heartRateSensor = sensorManager.getDefaultSensor(Sensor.TYPE_HEART_BEAT);
+
+        nodeClient = Wearable.getNodeClient(this);
+        messageClient = Wearable.getMessageClient(this);
     }
 
     @Override
@@ -330,20 +339,21 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
         sensorManager.unregisterListener(this);
         currentSession = UUID.randomUUID().toString();
 
-        FileInputStream f_input_stream= null;
-        try {
-            f_input_stream = new FileInputStream(new File("file:///android_asset/converted_model.tflite"));
-            FileChannel f_channel = f_input_stream.getChannel();
-            MappedByteBuffer tflite_model = f_channel.map(FileChannel.MapMode.READ_ONLY, 0, f_channel.size());
-            Interpreter interpreter = new Interpreter(new File("C:\\Users\\Elise\\Documents\\unif\\master\\semester2\\masterproef\\gitProject\\thesis\\rope_skipping.tflite"))) {
-                //interpreter.run(input, output);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        try (Interpreter interpreter = new Interpreter(new File("C:\\Users\\Elise\\Documents\\unif\\master\\semester2\\masterproef\\gitProject\\thesis\\rope_skipping.tflite"))) {
-            //interpreter.run(input, output);
-        }
+        nodeClient.getConnectedNodes()
+                .addOnSuccessListener(new OnSuccessListener<List<Node>>() {
+                    @Override
+                    public void onSuccess(List<Node> nodes) {
+                        for(Node node : nodes) {
+                            messageClient.sendMessage(node.getId(), ACCELEROMETER_STOP, new byte[]{})
+                                    .addOnSuccessListener(new OnSuccessListener<Integer>() {
+                                        @Override
+                                        public void onSuccess(Integer integer) {
+                                            //gelukt
+                                        }
+                                    });
+                        }
+                    }
+                });
         //ACCELEROMETER
         /*
         for(Map point : accelero_dataPoints){
@@ -480,7 +490,7 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
     }
 
     @Override
-    public void onSensorChanged(SensorEvent event) {
+    public void onSensorChanged(final SensorEvent event) {
         if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
             Map<String, Object> dataPoint = new HashMap<>();
             dataPoint.put("time", System.nanoTime());
@@ -494,6 +504,35 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
             dataPoint.put("heart_rate", event.values[0]);
             heart_rate_dataPoints.add(dataPoint);
         }
+
+        nodeClient.getConnectedNodes()
+                .addOnSuccessListener(new OnSuccessListener<List<Node>>() {
+                    @Override
+                    public void onSuccess(List<Node> nodes) {
+                        for(Node node : nodes) {
+                            messageClient.sendMessage(node.getId(),ACCELEROMETER, FloatArray2ByteArray(event.values, System.nanoTime()))
+                                    .addOnSuccessListener(new OnSuccessListener<Integer>() {
+                                        @Override
+                                        public void onSuccess(Integer integer) {
+                                            //gelukt
+                                        }
+                                    });
+                        }
+                    }
+                });
+    }
+
+    public byte[] FloatArray2ByteArray(float[] values, Long time){
+        Log.d(TAG, time+"");
+        ByteBuffer buffer = ByteBuffer.allocate(4 * values.length+4);
+
+        buffer.putFloat(time.floatValue());
+
+        for (float value : values){
+            buffer.putFloat(value);
+        }
+
+        return buffer.array();
     }
 
     @Override

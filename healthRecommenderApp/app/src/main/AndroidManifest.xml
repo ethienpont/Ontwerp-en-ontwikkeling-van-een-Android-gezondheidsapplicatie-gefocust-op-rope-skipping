@@ -26,11 +26,22 @@
             </intent-filter>
         </activity>
         <activity android:name=".RecommendationActivity"></activity>
-        <receiver android:name=".userActivityService"  android:exported="true">
+        <receiver android:name=".Services.userActivityService"  android:exported="true">
             <intent-filter>
                 <action android:name="ACTIVITY_RECOGNITION"/>
             </intent-filter>
         </receiver>
+        <service android:name=".Services.wearableService">
+            <intent-filter>
+                <!-- listeners receive events that match the actioand data filters -->
+                <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <action android:name="com.google.android.gms.wearable.CAPABILITY_CHANGED" />
+                <action android:name="com.google.android.gms.wearable.CHANNEL_EVENT" />
+                <data android:scheme="wear" android:host="*" android:pathPrefix="/ACCELEROMETER" />
+                <data android:scheme="wear" android:host="*" android:pathPrefix="/ACCELEROMETER_STOP" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

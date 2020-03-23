@@ -7,9 +7,9 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentTransaction;
 
-import android.Manifest;
 import android.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+import ugent.waves.healthrecommenderapp.Services.userActivityService;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -21,6 +21,7 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.Settings;
 import android.util.Log;
 
@@ -38,7 +39,6 @@ import com.google.android.gms.fitness.request.SessionReadRequest;
 import com.google.android.gms.fitness.result.SessionReadResponse;
 import com.google.android.gms.location.ActivityRecognition;
 import com.google.android.gms.location.ActivityTransition;
-import com.google.android.gms.location.ActivityTransitionRequest;
 import com.google.android.gms.location.DetectedActivity;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -49,7 +49,6 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -123,6 +122,8 @@ public class SessionHistoryActivity extends AppCompatActivity {
                 .build();
 
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
+
+        Log.e(TAG, Environment.getExternalStorageDirectory().getAbsolutePath());
 
         //TODO: voor firebase auth moet iedere keer expliciet ingelogd worden...
         //account = GoogleSignIn.getLastSignedInAccount(this);
