@@ -110,6 +110,7 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
     private NodeClient nodeClient;
     private MessageClient messageClient;
     private String ACCELEROMETER_STOP = "/ACCELEROMETER_STOP";
+    private static final String ACCELEROMETER_START = "/ACCELEROMETER_START";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -333,6 +334,21 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
         heart_rate_dataPoints = new ArrayList<>();
         sensorManager.registerListener(this, acceleroSensor, SensorManager.SENSOR_DELAY_NORMAL);
         sensorManager.registerListener(this, heartRateSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        nodeClient.getConnectedNodes()
+                .addOnSuccessListener(new OnSuccessListener<List<Node>>() {
+                    @Override
+                    public void onSuccess(List<Node> nodes) {
+                        for(Node node : nodes) {
+                            messageClient.sendMessage(node.getId(), ACCELEROMETER_START, new byte[]{})
+                                    .addOnSuccessListener(new OnSuccessListener<Integer>() {
+                                        @Override
+                                        public void onSuccess(Integer integer) {
+                                            //gelukt
+                                        }
+                                    });
+                        }
+                    }
+                });
     }
 
     private void endRopeSkippingSession() {
