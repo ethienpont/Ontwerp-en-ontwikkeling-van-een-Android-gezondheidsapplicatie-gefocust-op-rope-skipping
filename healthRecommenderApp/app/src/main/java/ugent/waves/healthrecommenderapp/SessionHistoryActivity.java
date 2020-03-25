@@ -62,6 +62,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+//TODO: show start + end time rope skipping session
+//TODO: show turns + mistake timestamps
 public class SessionHistoryActivity extends AppCompatActivity {
 
     //recycler view
@@ -236,13 +238,14 @@ public class SessionHistoryActivity extends AppCompatActivity {
             sendRecommendation(0);
 
             //get history data for 1 week
+            //TODO: google fit
             initHistoryData();
 
-            goalHandler h = new goalHandler(db, user, account, this, app);
+            //goalHandler h = new goalHandler(db, user, account, this, app);
 
             db.collection("users")
                     .document("testUser")
-                    .collection("sessionCalculations")
+                    .collection("sessions")
                     .get()
                     .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                         @Override
@@ -257,8 +260,33 @@ public class SessionHistoryActivity extends AppCompatActivity {
                                 List<DataSet> dataSets = null;
                                 SessionHistoryData s = new SessionHistoryData(activity, imgId, start, end, dataSets, turns, mets);
                                 data.add(s);
+
+                                //haal activities op
+                                db.collection("users")
+                                        .document("testUser")
+                                        .collection("sessions")
+                                        .document(doc.getId())
+                                        .collection("activities")
+                                        .get()
+                                        .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                                            @Override
+                                            public void onSuccess(QuerySnapshot a) {
+                                                for(DocumentSnapshot activity : a.getDocuments()){
+                                                    float start = activity.get("start") == null ? 0 : Float.parseFloat(activity.get("start").toString());
+                                                    Date s = new Date((long) start);
+                                                    //TODO: float -> string -> long -> date gives wrong time
+                                                    Log.d("dd", s.toString());
+                                                }
+                                                showRecyclerView();
+                                            }
+                                        })
+                                        .addOnFailureListener(new OnFailureListener() {
+                                            @Override
+                                            public void onFailure(@NonNull Exception e) {
+                                                Log.w("l", "Error writing document", e);
+                                            }
+                                        });
                             }
-                            showRecyclerView();
                         }
                     })
                     .addOnFailureListener(new OnFailureListener() {

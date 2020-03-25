@@ -3,6 +3,8 @@ package ugent.waves.healthrecommenderapp;
 import android.app.Application;
 import android.util.Log;
 
+import com.google.firebase.firestore.FirebaseFirestore;
+
 import java.util.Calendar;
 import java.util.Date;
 
@@ -12,6 +14,8 @@ public class healthRecommenderApplication extends Application {
     private int weeknr;
     private int goal;
     private int rank;
+
+    private FirebaseFirestore db;
 
     public Long getNowMilliSec(Calendar cal){
         Date now = new Date();
@@ -49,5 +53,12 @@ public class healthRecommenderApplication extends Application {
 
     public void setGoal(int goal) {
         this.goal = goal;
+    }
+
+    public FirebaseFirestore getFirestore() {
+        if(db == null){
+            db = FirebaseFirestore.getInstance();
+        }
+        return db;
     }
 }
