@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:android="http://schemas.android.com/apk/res/android">
     <data>
-        <variable name="sessionData" type="ugent.waves.healthrecommenderapp.SessionHistoryData"/>
+        <variable name="sessionData" type="ugent.waves.healthrecommenderapp.DataClasses.SessionHistoryData"/>
         <import type="android.view.View"/>
     </data>
 

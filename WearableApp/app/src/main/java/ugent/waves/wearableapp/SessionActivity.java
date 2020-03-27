@@ -109,8 +109,10 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
     private Sensor heartRateSensor;
     private NodeClient nodeClient;
     private MessageClient messageClient;
-    private String ACCELEROMETER_STOP = "/ACCELEROMETER_STOP";
-    private static final String ACCELEROMETER_START = "/ACCELEROMETER_START";
+    private String STOP = "/STOP";
+    private static final String START = "/START";
+
+    private String HEARTRATE = "/HEARTRATE";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -339,7 +341,7 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
                     @Override
                     public void onSuccess(List<Node> nodes) {
                         for(Node node : nodes) {
-                            messageClient.sendMessage(node.getId(), ACCELEROMETER_START, new byte[]{})
+                            messageClient.sendMessage(node.getId(), START, new byte[]{})
                                     .addOnSuccessListener(new OnSuccessListener<Integer>() {
                                         @Override
                                         public void onSuccess(Integer integer) {
@@ -360,7 +362,7 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
                     @Override
                     public void onSuccess(List<Node> nodes) {
                         for(Node node : nodes) {
-                            messageClient.sendMessage(node.getId(), ACCELEROMETER_STOP, new byte[]{})
+                            messageClient.sendMessage(node.getId(), STOP, new byte[]{})
                                     .addOnSuccessListener(new OnSuccessListener<Integer>() {
                                         @Override
                                         public void onSuccess(Integer integer) {
@@ -508,34 +510,52 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
     @Override
     public void onSensorChanged(final SensorEvent event) {
         if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
+            /*
             Map<String, Object> dataPoint = new HashMap<>();
             dataPoint.put("time", System.nanoTime());
             dataPoint.put("x", event.values[0]);
             dataPoint.put("y", event.values[1]);
             dataPoint.put("z", event.values[2]);
-            accelero_dataPoints.add(dataPoint);
+            accelero_dataPoints.add(dataPoint);*/
+            nodeClient.getConnectedNodes()
+                    .addOnSuccessListener(new OnSuccessListener<List<Node>>() {
+                        @Override
+                        public void onSuccess(List<Node> nodes) {
+                            for(Node node : nodes) {
+                                messageClient.sendMessage(node.getId(),ACCELEROMETER, FloatArray2ByteArray(event.values, System.nanoTime()))
+                                        .addOnSuccessListener(new OnSuccessListener<Integer>() {
+                                            @Override
+                                            public void onSuccess(Integer integer) {
+                                                //gelukt
+                                            }
+                                        });
+                            }
+                        }
+                    });
+            //TODO: heartbeat constant 0???
         } else if(event.sensor.getType() == Sensor.TYPE_HEART_BEAT){
+            /*
             Map<String, Object> dataPoint = new HashMap<>();
             dataPoint.put("time", System.nanoTime());
             dataPoint.put("heart_rate", event.values[0]);
-            heart_rate_dataPoints.add(dataPoint);
-        }
-
-        nodeClient.getConnectedNodes()
-                .addOnSuccessListener(new OnSuccessListener<List<Node>>() {
-                    @Override
-                    public void onSuccess(List<Node> nodes) {
-                        for(Node node : nodes) {
-                            messageClient.sendMessage(node.getId(),ACCELEROMETER, FloatArray2ByteArray(event.values, System.nanoTime()))
-                                    .addOnSuccessListener(new OnSuccessListener<Integer>() {
-                                        @Override
-                                        public void onSuccess(Integer integer) {
-                                            //gelukt
-                                        }
-                                    });
+            heart_rate_dataPoints.add(dataPoint);*/
+            Log.d(TAG, event.values[0]+"");
+            nodeClient.getConnectedNodes()
+                    .addOnSuccessListener(new OnSuccessListener<List<Node>>() {
+                        @Override
+                        public void onSuccess(List<Node> nodes) {
+                            for(Node node : nodes) {
+                                messageClient.sendMessage(node.getId(),HEARTRATE, FloatArray2ByteArray(event.values, System.nanoTime()))
+                                        .addOnSuccessListener(new OnSuccessListener<Integer>() {
+                                            @Override
+                                            public void onSuccess(Integer integer) {
+                                                //gelukt
+                                            }
+                                        });
+                            }
                         }
-                    }
-                });
+                    });
+        }
     }
 
     public byte[] FloatArray2ByteArray(float[] values, Long time){

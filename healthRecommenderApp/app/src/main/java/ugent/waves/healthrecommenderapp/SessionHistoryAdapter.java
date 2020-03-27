@@ -1,8 +1,6 @@
 package ugent.waves.healthrecommenderapp;
 
 import android.content.Context;
-import android.content.Intent;
-import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,9 +11,9 @@ import android.widget.TextView;
 import java.util.List;
 
 import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.RecyclerView.ViewHolder;
 import androidx.recyclerview.widget.RecyclerView.Adapter;
+import ugent.waves.healthrecommenderapp.DataClasses.SessionHistoryData;
 
 public class SessionHistoryAdapter extends Adapter<SessionHistoryAdapter.SessionViewHolder> {
     private final Context context;

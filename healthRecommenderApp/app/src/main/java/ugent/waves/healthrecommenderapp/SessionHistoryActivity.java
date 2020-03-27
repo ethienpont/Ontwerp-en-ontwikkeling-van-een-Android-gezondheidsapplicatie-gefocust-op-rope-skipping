@@ -1,16 +1,6 @@
 package ugent.waves.healthrecommenderapp;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.app.NotificationCompat;
-import androidx.core.content.ContextCompat;
-import androidx.fragment.app.FragmentTransaction;
-
 import android.app.AlertDialog;
-import androidx.fragment.app.Fragment;
-import ugent.waves.healthrecommenderapp.Services.userActivityService;
-
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -21,7 +11,6 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.provider.Settings;
 import android.util.Log;
 
@@ -61,6 +50,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
+import ugent.waves.healthrecommenderapp.DataClasses.Activity;
+import ugent.waves.healthrecommenderapp.DataClasses.SessionHistoryData;
+import ugent.waves.healthrecommenderapp.Services.userActivityService;
 
 //TODO: show start + end time rope skipping session
 //TODO: show turns + mistake timestamps
@@ -125,8 +125,6 @@ public class SessionHistoryActivity extends AppCompatActivity {
 
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
-        Log.e(TAG, Environment.getExternalStorageDirectory().getAbsolutePath());
-
         //TODO: voor firebase auth moet iedere keer expliciet ingelogd worden...
         //account = GoogleSignIn.getLastSignedInAccount(this);
         if(account == null){
@@ -137,6 +135,191 @@ public class SessionHistoryActivity extends AppCompatActivity {
             accessApp();
         }
 
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        account = GoogleSignIn.getLastSignedInAccount(this);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        /*
+        ActivityRecognition.getClient(this)
+                .removeActivityTransitionUpdates(pendingIntent)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Log.e(TAG, "suc");
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.e(TAG, "suc");
+                    }
+                });*/
+    }
+
+    private void accessApp(){
+        // Check for necessary permissions (and request in case no permissions were granted)
+        if (permissionsGranted) {
+            // Add the fragment to the 'fragment_container' FrameLayout
+            switchContent(R.id.container,SessionHistoryListFragment.newInstance(data));
+            
+            //initialize firestore db
+            db = app.getFirestore();
+        }
+    }
+
+    private void initActivityDetection(){
+        transitions = new ArrayList<>();
+        //detect when user can't or should perform a physical activity
+        transitions.add(
+                new ActivityTransition.Builder()
+                        .setActivityType(DetectedActivity.IN_VEHICLE)
+                        .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
+                        .build());
+
+        transitions.add(
+                new ActivityTransition.Builder()
+                        .setActivityType(DetectedActivity.IN_VEHICLE)
+                        .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
+                        .build());
+
+        transitions.add(
+                new ActivityTransition.Builder()
+                        .setActivityType(DetectedActivity.STILL)
+                        .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
+                        .build());
+
+        transitions.add(
+                new ActivityTransition.Builder()
+                        .setActivityType(DetectedActivity.STILL)
+                        .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
+                        .build());
+
+        Intent i = new Intent(this, userActivityService.class);
+        i.setAction("ACTIVITY_RECOGNITION");
+
+        pendingIntent = PendingIntent.getBroadcast(this, 7, i, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        ActivityRecognition.getClient(this)
+                .requestActivityUpdates(1000, pendingIntent)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Log.d(TAG, "");
+                    }
+                });
+    }
+
+    /*
+    FRAGMENT/RECYCLERVIEW
+     */
+
+    private void showRecyclerView() {
+        Fragment fr = SessionHistoryListFragment.newInstance(data);
+        switchContent(R.id.container, fr);
+    }
+
+    private int getImage(String activity) {
+        if(activity.equals("running")){
+            return R.drawable.running;
+        } else if(activity.equals("biking")){
+            return R.drawable.biking;
+        } else if(activity.equals("badminton")){
+            return R.drawable.badminton;
+        } else if(activity.equals("rope skipping")){
+            return R.drawable.rope_skipping;
+        }
+        return R.drawable.other;
+    }
+
+    public void switchContent(int id, Fragment fragment) {
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        ft.replace(id, fragment, fragment.toString());
+        ft.addToBackStack(null);
+        ft.commit();
+    }
+
+    /*
+    GET DATA
+     */
+
+    private Task<QuerySnapshot> get_activity_data(String id){
+        //haal activities op
+        Task<QuerySnapshot>  t = db.collection("users")
+                .document("testUser")
+                .collection("sessions")
+                .document(id)
+                .collection("activities")
+                .get();
+                /*
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot a) {
+                        for(DocumentSnapshot activity : a.getDocuments()){
+                            float start = activity.get("start") == null ? 0 : Float.parseFloat(activity.get("start").toString());
+                            Date s = new Date((long) start);
+                            //TODO: float -> string -> long -> date gives wrong time
+                            Log.d("dd", s.toString());
+                        }
+                        showRecyclerView();
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.w("l", "Error writing document", e);
+                    }
+                });*/
+                return t;
+    }
+
+    private void get_session_data(){
+        db.collection("users")
+                .document("testUser")
+                .collection("sessions")
+                .get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot d) {
+                        for(DocumentSnapshot doc : d.getDocuments()){
+                            String activity = "rope skipping";
+                            int imgId = getImage(activity);
+                            String turns = doc.get("turns") == null ? null : doc.get("turns").toString();
+                            String mets = doc.get("met_points") == null ? null : doc.get("met_points").toString();
+
+                            get_activity_data(doc.getId())
+                            .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                                @Override
+                                public void onSuccess(QuerySnapshot q) {
+                                    List<Activity> activities = new ArrayList<>();
+                                    for(DocumentSnapshot d: q.getDocuments()){
+                                        Activity a = new Activity(d.get("start").toString(), d.get("end").toString(), d.get("activity").toString());
+                                        activities.add(a);
+                                    }
+                                    SessionHistoryData s = new SessionHistoryData(activity, imgId, turns, mets, activities);
+                                    data.add(s);
+                                }
+                            });
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.w("l", "Error writing document", e);
+                    }
+                });
     }
 
     private void sendRecommendation(int rank){
@@ -192,154 +375,62 @@ public class SessionHistoryActivity extends AppCompatActivity {
             notificationManager.createNotificationChannel(channel);
         }
 
-        notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
+        notificationManager.notify(0, notificationBuilder.build());
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        account = GoogleSignIn.getLastSignedInAccount(this);
-    }
+    private void initHistoryData() {
+        Calendar cal = Calendar.getInstance();
+        Date now = new Date();
+        cal.setTime(now);
+        cal.set(Calendar.HOUR_OF_DAY, 23);
+        cal.set(Calendar.MINUTE, 59);
+        cal.set(Calendar.SECOND, 59);
+        cal.set(Calendar.MILLISECOND, 999);
+        long endTime = cal.getTimeInMillis();
+        //cal.add(Calendar.DAY_OF_WEEK, -1);
+        cal.add(Calendar.WEEK_OF_YEAR, -3);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        long startTime = cal.getTimeInMillis();
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-    }
 
-    @Override
-    protected void onStop() {
-        super.onStop();
-        /*
-        ActivityRecognition.getClient(this)
-                .removeActivityTransitionUpdates(pendingIntent)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
+        SessionReadRequest readRequest = new SessionReadRequest.Builder()
+                .setTimeInterval(startTime, endTime, TimeUnit.MILLISECONDS)
+                .read(DataType.TYPE_HEART_RATE_BPM)
+                .readSessionsFromAllApps()
+                .enableServerQueries()
+                .build();
+
+        Fitness.getSessionsClient(this, account)
+                .readSession(readRequest)
+                .addOnSuccessListener(new OnSuccessListener<SessionReadResponse>() {
                     @Override
-                    public void onSuccess(Void aVoid) {
-                        Log.e(TAG, "suc");
+                    public void onSuccess(SessionReadResponse sessionReadResponse) {
+                        List<Session> sessions = sessionReadResponse.getSessions();
+                        for (Session session : sessions) {
+                            String activity = session.getActivity();
+                            int imgId = getImage(activity);
+                            long start = session.getStartTime(TimeUnit.MILLISECONDS);
+                            long end = session.getEndTime(TimeUnit.MILLISECONDS);
+                            List<DataSet> dataSets = sessionReadResponse.getDataSet(session);
+                            //SessionHistoryData s = new SessionHistoryData(activity, imgId, dataSets, null, null);
+                            //data.add(s);
+                        }
+                        showRecyclerView();
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        Log.e(TAG, "suc");
                     }
-                });*/
+                });
     }
 
-    private void accessApp(){
-        // Check for necessary permissions (and request in case no permissions were granted)
-        if (permissionsGranted) {
-            // Add the fragment to the 'fragment_container' FrameLayout
-            switchContent(R.id.container,SessionHistoryListFragment.newInstance(data));
-            
-            //initialize firestore db
-            db = FirebaseFirestore.getInstance();
-
-            sendRecommendation(0);
-
-            //get history data for 1 week
-            //TODO: google fit
-            initHistoryData();
-
-            //goalHandler h = new goalHandler(db, user, account, this, app);
-
-            db.collection("users")
-                    .document("testUser")
-                    .collection("sessions")
-                    .get()
-                    .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                        @Override
-                        public void onSuccess(QuerySnapshot d) {
-                            for(DocumentSnapshot doc : d.getDocuments()){
-                                String activity = "rope skipping";
-                                int imgId = getImage(activity);
-                                long start = 112;
-                                long end = 112;
-                                String turns = doc.get("turns") == null ? null : doc.get("turns").toString();
-                                String mets = doc.get("met_points") == null ? null : doc.get("met_points").toString();
-                                List<DataSet> dataSets = null;
-                                SessionHistoryData s = new SessionHistoryData(activity, imgId, start, end, dataSets, turns, mets);
-                                data.add(s);
-
-                                //haal activities op
-                                db.collection("users")
-                                        .document("testUser")
-                                        .collection("sessions")
-                                        .document(doc.getId())
-                                        .collection("activities")
-                                        .get()
-                                        .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                                            @Override
-                                            public void onSuccess(QuerySnapshot a) {
-                                                for(DocumentSnapshot activity : a.getDocuments()){
-                                                    float start = activity.get("start") == null ? 0 : Float.parseFloat(activity.get("start").toString());
-                                                    Date s = new Date((long) start);
-                                                    //TODO: float -> string -> long -> date gives wrong time
-                                                    Log.d("dd", s.toString());
-                                                }
-                                                showRecyclerView();
-                                            }
-                                        })
-                                        .addOnFailureListener(new OnFailureListener() {
-                                            @Override
-                                            public void onFailure(@NonNull Exception e) {
-                                                Log.w("l", "Error writing document", e);
-                                            }
-                                        });
-                            }
-                        }
-                    })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            Log.w("l", "Error writing document", e);
-                        }
-                    });
-
-            transitions = new ArrayList<>();
-            //detect when user can't or should perform a physical activity
-            transitions.add(
-                    new ActivityTransition.Builder()
-                            .setActivityType(DetectedActivity.IN_VEHICLE)
-                            .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
-                            .build());
-
-            transitions.add(
-                    new ActivityTransition.Builder()
-                            .setActivityType(DetectedActivity.IN_VEHICLE)
-                            .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
-                            .build());
-
-            transitions.add(
-                    new ActivityTransition.Builder()
-                            .setActivityType(DetectedActivity.STILL)
-                            .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
-                            .build());
-
-            transitions.add(
-                    new ActivityTransition.Builder()
-                            .setActivityType(DetectedActivity.STILL)
-                            .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
-                            .build());
-
-            Intent i = new Intent(this, userActivityService.class);
-            i.setAction("ACTIVITY_RECOGNITION");
-
-            pendingIntent = PendingIntent.getBroadcast(this, 7, i, PendingIntent.FLAG_UPDATE_CURRENT);
-
-            ActivityRecognition.getClient(this)
-                    .requestActivityUpdates(1000, pendingIntent)
-                    .addOnSuccessListener(new OnSuccessListener<Void>() {
-                        @Override
-                        public void onSuccess(Void aVoid) {
-                            Log.d(TAG, "");
-                        }
-                    });
-
-            //h.setNewGoal(53);
-            //h.calculateNewGoal();
-        }
-    }
+    /*
+    GOOGLE + FIREBASE SIGNIN
+     */
 
     private void signIn() {
         // Launches the sign in flow, the result is returned in onActivityResult
@@ -489,82 +580,6 @@ public class SessionHistoryActivity extends AppCompatActivity {
         AlertDialog dialog = builder.create();
         dialog.show();
         return dialog;
-    }
-
-    private void initHistoryData() {
-        Calendar cal = Calendar.getInstance();
-        Date now = new Date();
-        cal.setTime(now);
-        cal.set(Calendar.HOUR_OF_DAY, 23);
-        cal.set(Calendar.MINUTE, 59);
-        cal.set(Calendar.SECOND, 59);
-        cal.set(Calendar.MILLISECOND, 999);
-        long endTime = cal.getTimeInMillis();
-        //cal.add(Calendar.DAY_OF_WEEK, -1);
-        cal.add(Calendar.WEEK_OF_YEAR, -3);
-        cal.set(Calendar.HOUR_OF_DAY, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        long startTime = cal.getTimeInMillis();
-
-
-        SessionReadRequest readRequest = new SessionReadRequest.Builder()
-                .setTimeInterval(startTime, endTime, TimeUnit.MILLISECONDS)
-                .read(DataType.TYPE_HEART_RATE_BPM)
-                .readSessionsFromAllApps()
-                .enableServerQueries()
-                .build();
-
-        Fitness.getSessionsClient(this, account)
-                .readSession(readRequest)
-                .addOnSuccessListener(new OnSuccessListener<SessionReadResponse>() {
-                    @Override
-                    public void onSuccess(SessionReadResponse sessionReadResponse) {
-                        List<Session> sessions = sessionReadResponse.getSessions();
-                        for (Session session : sessions) {
-                            String activity = session.getActivity();
-                            int imgId = getImage(activity);
-                            long start = session.getStartTime(TimeUnit.MILLISECONDS);
-                            long end = session.getEndTime(TimeUnit.MILLISECONDS);
-                            List<DataSet> dataSets = sessionReadResponse.getDataSet(session);
-                            SessionHistoryData s = new SessionHistoryData(activity, imgId, start, end, dataSets, null, null);
-                            data.add(s);
-                        }
-                        showRecyclerView();
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                    }
-                });
-    }
-
-    private void showRecyclerView() {
-        Fragment fr = SessionHistoryListFragment.newInstance(data);
-        switchContent(R.id.container, fr);
-    }
-
-
-    private int getImage(String activity) {
-        if(activity.equals("running")){
-            return R.drawable.running;
-        } else if(activity.equals("biking")){
-            return R.drawable.biking;
-        } else if(activity.equals("badminton")){
-            return R.drawable.badminton;
-        } else if(activity.equals("rope skipping")){
-            return R.drawable.rope_skipping;
-        }
-        return R.drawable.other;
-    }
-
-    public void switchContent(int id, Fragment fragment) {
-        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        ft.replace(id, fragment, fragment.toString());
-        ft.addToBackStack(null);
-        ft.commit();
     }
 
     //TODO: security rules so users can only access their own data

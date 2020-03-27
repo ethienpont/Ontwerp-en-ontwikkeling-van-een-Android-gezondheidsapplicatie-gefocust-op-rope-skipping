@@ -1,20 +1,13 @@
 package ugent.waves.healthrecommenderapp;
 
 import android.os.Bundle;
-import android.os.Parcelable;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.google.android.gms.fitness.data.DataSet;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import androidx.databinding.DataBindingUtil;
-import androidx.databinding.ViewDataBinding;
 import androidx.fragment.app.Fragment;
+import ugent.waves.healthrecommenderapp.DataClasses.SessionHistoryData;
 import ugent.waves.healthrecommenderapp.databinding.SessionHistoryFragmentBinding;
 
 public class SessionHistoryFragment extends Fragment {

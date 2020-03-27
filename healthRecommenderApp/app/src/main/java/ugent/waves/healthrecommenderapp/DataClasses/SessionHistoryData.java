@@ -1,32 +1,25 @@
-package ugent.waves.healthrecommenderapp;
+package ugent.waves.healthrecommenderapp.DataClasses;
 
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import com.google.android.gms.fitness.data.DataSet;
-
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 public class SessionHistoryData implements Parcelable {
     private String description;
     private int imgId;
-    private String startTime;
-    private String endTime;
-    private List<DataSet> datasets;
     private String turns;
     private String mets_points;
+    private List<Activity> activities;
 
-    public SessionHistoryData(String activity, int imgId, Long startTime, Long endTime, List<DataSet> datasets, String turns, String met_points) {
+    public SessionHistoryData(String activity, int imgId, String turns, String met_points, List<Activity> activities) {
         this.description = activity;
         this.imgId = imgId;
-        this.startTime = setDate(new Date(startTime));
-        this.endTime = setDate(new Date(endTime));
-        this.datasets = datasets;
         this.turns = turns+"";
         this.mets_points = met_points+"";
+        this.activities = activities;
     }
 
     public String getDescription() {
@@ -42,30 +35,6 @@ public class SessionHistoryData implements Parcelable {
         this.imgId = imgId;
     }
 
-    public String getEndTime() {
-        return endTime;
-    }
-
-    public void setEndTime(String endTime) {
-        this.endTime = endTime;
-    }
-
-    public String getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(String startTime) {
-        this.startTime = startTime;
-    }
-
-    public void setDatasetst(List<DataSet> d){
-        this.datasets = d;
-    }
-
-    public List<DataSet> getDatasets (){
-        return datasets;
-    }
-
     @Override
     public int describeContents() {
         return 0;
@@ -75,9 +44,7 @@ public class SessionHistoryData implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(this.description);
         dest.writeInt(this.imgId);
-        dest.writeString(this.startTime);
-        dest.writeString(this.endTime);
-        dest.writeTypedList(this.datasets);
+        dest.writeTypedList(this.activities);
         dest.writeString(this.turns);
         dest.writeString(this.mets_points);
     }
@@ -96,9 +63,7 @@ public class SessionHistoryData implements Parcelable {
     private SessionHistoryData(Parcel in) {
         this.description = in.readString();
         this.imgId = in.readInt();
-        this.startTime = in.readString();
-        this.endTime = in.readString();
-        in.readTypedList(this.datasets, DataSet.CREATOR);
+        in.readTypedList(this.activities, Activity.CREATOR);
         this.turns = in.readString();
         this.mets_points = in.readString();
     }

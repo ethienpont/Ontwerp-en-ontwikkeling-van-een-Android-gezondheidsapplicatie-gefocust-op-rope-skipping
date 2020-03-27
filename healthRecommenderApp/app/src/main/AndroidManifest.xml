@@ -40,8 +40,10 @@
                 <action android:name="com.google.android.gms.wearable.CAPABILITY_CHANGED" />
                 <action android:name="com.google.android.gms.wearable.CHANNEL_EVENT" />
                 <data android:scheme="wear" android:host="*" android:pathPrefix="/ACCELEROMETER" />
-                <data android:scheme="wear" android:host="*" android:pathPrefix="/ACCELEROMETER_STOP" />
-                <data android:scheme="wear" android:host="*" android:pathPrefix="/ACCELEROMETER_START" />
+                <data android:scheme="wear" android:host="*" android:pathPrefix="/STOP" />
+                <data android:scheme="wear" android:host="*" android:pathPrefix="/START" />
+
+                <data android:scheme="wear" android:host="*" android:pathPrefix="/HEARTRATE" />
             </intent-filter>
         </service>
     </application>

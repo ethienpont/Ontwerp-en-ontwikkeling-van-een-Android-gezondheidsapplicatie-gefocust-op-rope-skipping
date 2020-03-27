@@ -1,9 +1,6 @@
 package ugent.waves.healthrecommenderapp.Services;
 
-import android.content.Intent;
-import android.os.Environment;
 import android.util.Log;
-import android.view.animation.ScaleAnimation;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -23,14 +20,12 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.lang.Object;
 import java.util.UUID;
 
 import androidx.annotation.NonNull;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentTransaction;
+import ugent.waves.healthrecommenderapp.Enums.JumpMoves;
+import ugent.waves.healthrecommenderapp.SavGolFilter;
 import ugent.waves.healthrecommenderapp.healthRecommenderApplication;
 
 /*
@@ -40,24 +35,45 @@ import ugent.waves.healthrecommenderapp.healthRecommenderApplication;
 4. group output per activity in transitions (startIndex -> activity)
 5. start + end time of activities ( "start" -> [], "end" -> [], "activity"->[] )
 6. post to firebase: users -> testuser -> sessions -> activities
+
+7. heartrate data in map "time" -> [], "HR" -> []
+8. calculate met_points
+9. post to firebase: users -> testuser -> sessions
  */
-//TODO: calculate turns + mistakes
-//TODO: get heartrate data
-//TODO: calculate met_points
+//TODO: structurize
 public class wearableService extends WearableListenerService {
     //TODO: save sessions to room db??
-    private static final String ACCELEROMETER_START = "/ACCELEROMETER_START";
-    private String ACCELEROMETER = "/ACCELEROMETER";
 
-    private String ACCELEROMETER_STOP = "/ACCELEROMETER_STOP";
-
-    //dict with accelerometer data
-    private Map<String, List<Float>> session;
     private float[] output;
-    //beginindex uit output array gemapt op waarde
-    private Map<Integer,Float> trantitions;
+
+    //"start", "end", "activity"
+    private Map<String, List<Float>> trantitions;
+    private Map<JumpMoves, SavGolFilter> filters;
+
     private healthRecommenderApplication app;
     private FirebaseFirestore firestore;
+
+
+    //MESSAGE PATHS
+    private static final String START = "/START";
+    private String ACCELEROMETER = "/ACCELEROMETER";
+    private String STOP = "/STOP";
+    private String HEARTRATE = "/HEARTRATE";
+
+    //HEARTRATE CONSTANTS
+    private int veryLightZone = 1;
+    private int lightZone = 2;
+    private int moderateZone = 3;
+    private int hardZone = 4;
+    private int maximumZone = 5;
+
+    private static final double MAXHR = 200;
+
+    //RAW DATA STORAGE
+    private Map<String, List<Float>> session_heartbeat;
+    private Map<String, List<Float>> session_accelerometer;
+
+
 
     //TODO: oncreate called maar onmessagereceived niet meer
     /*
@@ -70,87 +86,274 @@ public class wearableService extends WearableListenerService {
     public void onMessageReceived(@NonNull MessageEvent messageEvent) {
         app = (healthRecommenderApplication) this.getApplicationContext();
         firestore = app.getFirestore();
+        //TODO: parameters bepalen
+        filters = new HashMap<>();
+        filters.put(JumpMoves.SLOW, new SavGolFilter(0, 51, 3));
+        filters.put(JumpMoves.FAST, new SavGolFilter(0, 33, 5));
+        filters.put(JumpMoves.SIDE_SWING, new SavGolFilter(0, 51, 3));
+        filters.put(JumpMoves.CROSS_OVER, new SavGolFilter(0, 41, 3));
+        filters.put(JumpMoves.FORWARD_180, new SavGolFilter(0, 51, 3));
+
         //TODO: message ordering niet ok??
-        if(messageEvent.getPath().equalsIgnoreCase(ACCELEROMETER_START) ){
-            session = new HashMap<>();
-            session.put("time", new ArrayList<>());
-            session.put("x", new ArrayList<>());
-            session.put("y", new ArrayList<>());
-            session.put("z", new ArrayList<>());
-        } else if( messageEvent.getPath().equalsIgnoreCase(ACCELEROMETER) ){
+        if(messageEvent.getPath().equalsIgnoreCase(START) ){
+            session_accelerometer = new HashMap<>();
+            session_accelerometer.put("time", new ArrayList<>());
+            session_accelerometer.put("x", new ArrayList<>());
+            session_accelerometer.put("y", new ArrayList<>());
+            session_accelerometer.put("z", new ArrayList<>());
+
+            session_heartbeat = new HashMap<>();
+            session_heartbeat.put("time", new ArrayList<>());
+            session_heartbeat.put("HR", new ArrayList<>());
+
+        }
+
+        else if( messageEvent.getPath().equalsIgnoreCase(ACCELEROMETER) ){
             FloatBuffer values = ByteBuffer.wrap(messageEvent.getData()).asFloatBuffer();
             final float[] dst = new float[values.capacity()];
             values.get(dst);
-            if(session == null){
-                session = new HashMap<>();
-                session.put("time", new ArrayList<>());
-                session.put("x", new ArrayList<>());
-                session.put("y", new ArrayList<>());
-                session.put("z", new ArrayList<>());
+            if(session_accelerometer == null){
+                session_accelerometer = new HashMap<>();
+                session_accelerometer.put("time", new ArrayList<>());
+                session_accelerometer.put("x", new ArrayList<>());
+                session_accelerometer.put("y", new ArrayList<>());
+                session_accelerometer.put("z", new ArrayList<>());
             }
-            session.get("time").add(dst[0]);
-            session.get("x").add(dst[1]);
-            session.get("y").add(dst[2]);
-            session.get("z").add(dst[3]);
-        } else if(messageEvent.getPath().equalsIgnoreCase(ACCELEROMETER_STOP)){
+            session_accelerometer.get("time").add(dst[0]);
+            session_accelerometer.get("x").add(dst[1]);
+            session_accelerometer.get("y").add(dst[2]);
+            session_accelerometer.get("z").add(dst[3]);
+        }
+
+        else if(messageEvent.getPath().equalsIgnoreCase(HEARTRATE)){
+            FloatBuffer values = ByteBuffer.wrap(messageEvent.getData()).asFloatBuffer();
+            final float[] dst = new float[values.capacity()];
+            values.get(dst);
+
+            if(session_heartbeat == null){
+                session_heartbeat = new HashMap<>();
+                session_heartbeat.put("time", new ArrayList<>());
+                session_heartbeat.put("HR", new ArrayList<>());
+            }
+
+            session_heartbeat.get("time").add(dst[0]);
+            session_heartbeat.get("HR").add(dst[1]);
+
+            Log.e(HEARTRATE, dst[0]+"" + dst[1]);
+        }
+
+        else if(messageEvent.getPath().equalsIgnoreCase(STOP)){
             //TODO: lange delay
-            Log.d(ACCELEROMETER_STOP, "xe zijn er");
-            File sdcard = getExternalFilesDir(null);
-            try (Interpreter interpreter = new Interpreter(new File(sdcard.getAbsolutePath(), "rope_skipping_simple.tflite"))) {
-                float[][][][] input = segmentation();
-                output = new float[input.length];
-                //final ByteBuffer buffer = ByteBuffer.allocate(input.size()*input.get(0).size()*input.get(0).get(0).size()*4);
-                //buffer.put(input);
-                interpreter.run(input, output);
-                makeActivities();
-                Map<String, List<Float>> t = get_trantitions();
+            try  {
+                output = getActivityPredictions();
+                trantitions = get_trantitions();
                 Log.d("hh", "tlukt");
             } catch(Exception e){
-                makeActivities();
-                Map<String, List<Float>> t = get_trantitions();
-                for(int i = 0; i < t.get("start").size(); i++){
-                    Map<String, String> d = new HashMap<>();
-                    double start = floatToTimeDouble(t.get("start").get(i));
-                    double end = floatToTimeDouble(t.get("end").get(i));
-                    d.put("start", start+"");
-                    d.put("end", end+"");
-                    d.put("activity", t.get("activity").get(i).toString());
-                    firestore.collection("users")
-                            .document("testUser")
-                            .collection("sessions")
-                            .document(UUID.randomUUID().toString())
-                            .collection("activities")
-                            .add(d)
-                            .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
-                                @Override
-                                public void onSuccess(DocumentReference documentReference) {
-                                    Log.d("dd", "DocumentSnapshot added with ID: " + documentReference.getId());
-                                }
-                            })
-                            .addOnFailureListener(new OnFailureListener() {
-                                @Override
-                                public void onFailure(@NonNull Exception e) {
-                                    Log.w("dd", "Error adding document", e);
-                                }
-                            });
-                }
-                Log.d("ddd",e.getMessage());
+
+                calculateSessionData();
+
             }
         }
     }
 
-    //TODO: wrong date
-    private double floatToTimeDouble(Float time) {
-        Calendar cal = Calendar.getInstance();
-        Date date_start = new Date((long) time.floatValue());
-        cal.setTime(date_start);
-        int h = cal.get(Calendar.HOUR);
-        int m = cal.get(Calendar.MINUTE);
-        int s = cal.get(Calendar.SECOND);
+    private void calculateSessionData(){
+        //mets + turns
+        Map<String, String> session_calc = new HashMap<>();
+        String id = UUID.randomUUID().toString();
+        int turns = numberTurns();
+        double met_score = processMETscore();
+        session_calc.put("met_score", met_score+"");
+        session_calc.put("turns", turns+"");
+        List<Float> mistakes = mistakesTimestamps();
+        post_data(session_calc, null, id);
 
-        double total = h + (m/60) + (s/3600);
-        return total;
+        //mistakes
+        for (int i=0; i < mistakes.size(); i++){
+            Map<String, String> mis = new HashMap<>();
+            mis.put("time", mistakes.get(i)+"");
+            post_data(mis, "mistakes", id);
+        }
+
+        //activities
+        for(int i = 0; i < trantitions.get("start").size(); i++){
+            Map<String, String> d = new HashMap<>();
+            double start = floatToTimeDouble(trantitions.get("start").get(i));
+            double end = floatToTimeDouble(trantitions.get("end").get(i));
+            d.put("start", start+"");
+            d.put("end", end+"");
+            d.put("activity", trantitions.get("activity").get(i).toString());
+
+            post_data(d, "activities", id);
+        }
     }
+
+    private float[] getActivityPredictions(){
+        File sdcard = getExternalFilesDir(null);
+        Interpreter interpreter = new Interpreter(new File(sdcard != null ? sdcard.getAbsolutePath() : null, "rope_skipping_simple.tflite"));
+        float[][][][] input = segmentation();
+        //TODO: transform output naar enum
+        float[] out = new float[input.length*100];
+        //final ByteBuffer buffer = ByteBuffer.allocate(input.size()*input.get(0).size()*input.get(0).get(0).size()*4);
+        //buffer.put(input);
+        interpreter.run(input, out);
+        return out;
+    }
+
+    private void post_data(Map<String, String> data, String path, String id){
+        if(path != null){
+            firestore.collection("users")
+                    .document("testUser")
+                    .collection("sessions")
+                    .document(id)
+                    .collection(path)
+                    .add(data)
+                    .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                        @Override
+                        public void onSuccess(DocumentReference documentReference) {
+                            Log.d("dd", "DocumentSnapshot added with ID: " + documentReference.getId());
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Log.w("dd", "Error adding document", e);
+                        }
+                    });
+        } else{
+            firestore.collection("users")
+                    .document("testUser")
+                    .collection("sessions")
+                    .document(id)
+                    .set(data)
+                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            Log.w("dd", "Error adding document");
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Log.w("dd", "Error adding document", e);
+                        }
+                    });
+        }
+    }
+
+    /*
+    SESSION CALCULATIONS
+     */
+
+    //TODO: alle assen bekijken en hier overlapping van nemen
+    //als data in alle assen bijna 0 is voor bepaalde duur = mistake
+    private List<Float> mistakesTimestamps(){
+        List<Float> mistakes = new ArrayList<>();
+        double interval_high = 0.5;
+        double interval_low = -0.5;
+        int start = -1, end;
+        int threshold = 6; //aantal datapunten nodig om geclassificeerd te worden als mistake
+        for(int i = 1; i < session_accelerometer.get("x").size(); i++){
+            //overgang van niet in interval naar wel = start
+            if(
+                    ((session_accelerometer.get("x").get(i) < interval_high && session_accelerometer.get("x").get(i) > interval_low)) && ((session_accelerometer.get("x").get(i-1) > interval_high || session_accelerometer.get("x").get(i-1) < interval_low))
+                    ){
+                start = i;
+            }
+            //overgang van in interval naar niet = end
+            if(
+                    ((session_accelerometer.get("x").get(i-1) < interval_high && session_accelerometer.get("x").get(i-1) > interval_low)) && ((session_accelerometer.get("x").get(i) > interval_high || session_accelerometer.get("x").get(i) < interval_low))
+                    ){
+                if(start != -1 && start - i > threshold){
+                    mistakes.add(session_accelerometer.get("time").get(start));
+                    start = -1;
+                }
+            }
+        }
+        return mistakes;
+    }
+
+    private int localMaxima(float a[])
+    {
+        int count = 0;
+
+        for (int i = 1; i < a.length - 1; i++)
+        {
+            if(a[i] > a[i - 1] && a[i] > a[i + 1])
+                count += 1;
+        }
+        return count;
+    }
+
+    //TODO: voor elke afzonderlijke beweging -> optellen (return)
+    private int numberTurns(){
+        Map<JumpMoves, Integer> turns = new HashMap<>();
+        turns.put(JumpMoves.SLOW, 0);
+        float [] x_savgol,y_savgol, z_savgol;
+        int x_turns, y_turns, z_turns;
+        //voor elke activiteit bereken draaiingen
+        for(int i = 0; i < trantitions.get("start").size(); i++){
+           //TODO: if -> voor elke afzonderlijke beweging
+            if(true){
+                SavGolFilter f = filters.get(JumpMoves.SLOW);
+                //TODO: aantal keer toepassen
+                x_savgol = f.filterData(Floattofloat(session_accelerometer.get("x")));
+                y_savgol = f.filterData(Floattofloat(session_accelerometer.get("y")));
+                z_savgol = f.filterData(Floattofloat(session_accelerometer.get("z")));
+
+                //TODO: savgol geeft overal zelfde waarde
+                x_turns = localMaxima(x_savgol);
+                y_turns = localMaxima(y_savgol);
+                z_turns = localMaxima(z_savgol);
+
+                turns.put(JumpMoves.SLOW,turns.get(JumpMoves.SLOW) + ((x_turns+y_turns+z_turns)/3));
+            }
+
+        }
+        return 0;
+    }
+
+    //TODO: tijdstippen bekijken
+    private double processMETscore(){
+        int score = 0;
+        //MPA = ligthzone, MPV = moderate zone
+        double timeMPA, timeMPV;
+        double sumMETmin = 0;
+        timeMPA = 0;
+        timeMPV = 0;
+        for(int i = 1; i < session_heartbeat.get("HR").size() ; i++){
+                if((getHeartRateZone(session_heartbeat.get("HR").get(i)) == getHeartRateZone(session_heartbeat.get("HR").get(i-1)))){
+                    if(getHeartRateZone(session_heartbeat.get("HR").get(i)) == lightZone){
+                            timeMPA += session_heartbeat.get("time").get(i) - session_heartbeat.get("HR").get(i-1);
+                    } else if(getHeartRateZone(session_heartbeat.get("HR").get(i)) == moderateZone){
+                            timeMPV += session_heartbeat.get("time").get(i) - session_heartbeat.get("HR").get(i-1);
+                    }
+                }
+        }
+        timeMPA = (timeMPA * Math.pow(10,-3))/60;
+        timeMPV = (timeMPV * Math.pow(10,-3))/60;
+        sumMETmin += 4 * timeMPA + 8 * timeMPV;
+
+        return sumMETmin;
+    }
+
+    private int getHeartRateZone(double v){
+        if( (v >= 0.5*MAXHR) && (v < 0.6*MAXHR) ){
+            return veryLightZone;
+        } else if( (v >= 0.6*MAXHR) && (v < 0.7*MAXHR) ){
+            return lightZone;
+        } else if( (v >= 0.7*MAXHR) && (v < 0.8*MAXHR) ){
+            return moderateZone;
+        } else if( (v >= 0.8*MAXHR) && (v < 0.9*MAXHR) ){
+            return hardZone;
+        } else if( (v >= 0.9*MAXHR) && (v < MAXHR) ){
+            return maximumZone;
+        }
+        return 0;
+    }
+
+    /*
+    ACTIVITY RECOGNITION: PREPROCESSING
+     */
 
     //TODO
     private void normalization(){
@@ -171,10 +374,10 @@ public class wearableService extends WearableListenerService {
 
         List<float[][][]> frames = new ArrayList<>();
 
-        for( int i = 0; i < session.get("x").size() - FRAME_SIZE; i += HOP_SIZE){
-            float[][] x = float1DTo2D(Floattofloat(session.get("x").subList(i, i+FRAME_SIZE)));
-            float[][] y = float1DTo2D(Floattofloat(session.get("y").subList(i, i+FRAME_SIZE)));
-            float[][] z = float1DTo2D(Floattofloat(session.get("z").subList(i, i+FRAME_SIZE)));
+        for( int i = 0; i < session_accelerometer.get("x").size() - FRAME_SIZE; i += HOP_SIZE){
+            float[][] x = float1DTo2D(Floattofloat(session_accelerometer.get("x").subList(i, i+FRAME_SIZE)));
+            float[][] y = float1DTo2D(Floattofloat(session_accelerometer.get("y").subList(i, i+FRAME_SIZE)));
+            float[][] z = float1DTo2D(Floattofloat(session_accelerometer.get("z").subList(i, i+FRAME_SIZE)));
 
             float[][][] segment = new float[3][FRAME_SIZE][1];
             //ByteBuffer segment = ByteBuffer.allocate(3*x.position());
@@ -190,6 +393,85 @@ public class wearableService extends WearableListenerService {
         return floatListTofloat4D(frames);
     }
 
+    /*
+    ACTIVITY RECOGNITION: PROCES OUTPUT
+     */
+
+    //TODO: met overlap omgaan
+    private Map<String, List<Float>> get_trantitions() {
+        Map<Integer,Float> t = makeActivities();
+        int FRAME_SIZE = getSamplingFrequentie() * 1;
+        int HOP_SIZE = 1;
+        //start, end, activiteit
+        Map<String, List<Float>> trantitions_ = new HashMap<>();
+        trantitions_.put("start", new ArrayList<>());
+        trantitions_.put("end", new ArrayList<>());
+        trantitions_.put("activity", new ArrayList<>());
+
+        List<Integer> indexes=new ArrayList(t.keySet());
+        Collections.sort(indexes);
+
+        float end, start;
+        if(indexes.size() == 1){
+            int numberSensorSamples = (output.length)*FRAME_SIZE; //TODO: drop partial frames
+            start = session_accelerometer.get("time").get(0);
+            end = session_accelerometer.get("time").get(1); //TODO: remove dummydata (make number samples correct)
+            trantitions_.get("start").add(start);
+            trantitions_.get("end").add(end);
+            trantitions_.get("activity").add(t.get(0));
+        } else{
+            int indexTime = 0;
+            for (int i = 0; i<indexes.size()-1; i++) {
+                int numberSensorSamples = (indexes.get(i + 1) - indexes.get(i))*FRAME_SIZE;
+                start = session_accelerometer.get("time").get(indexTime);
+                end = session_accelerometer.get("time").get(indexTime+numberSensorSamples);
+                trantitions_.get("start").add(start);
+                trantitions_.get("end").add(end);
+                trantitions_.get("activity").add(t.get(i));
+
+                indexTime = indexTime+numberSensorSamples;
+            }
+
+        }
+        return trantitions_;
+    }
+
+    //map start index uit output array op de activity die daar begint
+    //OUTPUT: index1 -> activiteit1, index2 -> activiteit2....
+    private Map<Integer,Float> makeActivities(){
+        Map<Integer,Float> t = new HashMap<>();
+        float activity = output[0];
+        int start = 0;
+        for (int i = 1; i < output.length-1; i++) {
+            if(output[i] != output[i-1]){
+                t.put(start, output[start]);
+                start = i;
+            }
+        }
+        if(t.size() == 0){
+            t.put(start, output[start]);
+        }
+        //beginindex uit output array gemapt op waarde
+        return t;
+    }
+
+    /*
+    HELP FUNCTIONS
+     */
+
+    //TODO: wrong date
+    private double floatToTimeDouble(Float time) {
+        Calendar cal = Calendar.getInstance();
+        Date date_start = new Date((long) time.floatValue());
+        cal.setTime(date_start);
+        int h = cal.get(Calendar.HOUR);
+        int m = cal.get(Calendar.MINUTE);
+        int s = cal.get(Calendar.SECOND);
+
+        double total = h + (m/60) + (s/3600);
+        return total;
+    }
+
     private byte[] toPrimitives(Byte[] oBytes)
     {
 
@@ -203,7 +485,7 @@ public class wearableService extends WearableListenerService {
 
     private ByteBuffer convertToBytebuffer(List<ByteBuffer> src)
     {
-        int size=src.size()*3*session.get("x").size()*4;
+        int size=src.size()*3*session_accelerometer.get("x").size()*4;
 
         ByteBuffer newBuffer = ByteBuffer.allocate(size);
 
@@ -244,58 +526,5 @@ public class wearableService extends WearableListenerService {
         return floatArray;
     }
 
-    //TODO: met overlap omgaan
-    private Map<String, List<Float>> get_trantitions() {
-        int FRAME_SIZE = getSamplingFrequentie() * 1;
-        int HOP_SIZE = 1;
-        //start, end, activiteit
-        Map<String, List<Float>> trantitions_ = new HashMap<>();
-        trantitions_.put("start", new ArrayList<>());
-        trantitions_.put("end", new ArrayList<>());
-        trantitions_.put("activity", new ArrayList<>());
 
-        List<Integer> indexes=new ArrayList(trantitions.keySet());
-        Collections.sort(indexes);
-
-        float end, start;
-        if(indexes.size() == 1){
-            int numberSensorSamples = (output.length)*FRAME_SIZE;
-            start = session.get("time").get(0);
-            end = session.get("time").get(1); //TODO: remove dummydata (make number samples correct)
-            trantitions_.get("start").add(start);
-            trantitions_.get("end").add(end);
-            trantitions_.get("activity").add(trantitions.get(0));
-        } else{
-            int indexTime = 0;
-            for (int i = 0; i<indexes.size()-1; i++) {
-                int numberSensorSamples = (indexes.get(i + 1) - indexes.get(i))*FRAME_SIZE;
-                start = session.get("time").get(indexTime);
-                end = session.get("time").get(indexTime+numberSensorSamples);
-                trantitions_.get("start").add(start);
-                trantitions_.get("end").add(end);
-                trantitions_.get("activity").add(trantitions.get(i));
-
-                indexTime = indexTime+numberSensorSamples;
-            }
-
-        }
-        return trantitions_;
-    }
-
-    //map start index uit output array op de activity die daar begint
-    //OUTPUT: index1 -> activiteit1, index2 -> activiteit2....
-    private void makeActivities(){
-        trantitions = new HashMap<>();
-        float activity = output[0];
-        int start = 0;
-        for (int i = 1; i < output.length-1; i++) {
-            if(output[i] != output[i-1]){
-                trantitions.put(start, output[start]);
-                start = i;
-            }
-        }
-        if(trantitions.size() == 0){
-            trantitions.put(start, output[start]);
-        }
-    }
 }
