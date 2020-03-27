@@ -11,6 +11,14 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = [
+                        "room.schemaLocation":"$projectDir/schemas".toString(),
+                        "room.incremental":"true",
+                        "room.expandProjection":"true"]
+            }
+        }
     }
     buildTypes {
         release {
@@ -28,6 +36,7 @@ android {
     aaptOptions {
         noCompress "tflite"
     }
+
 }
 
 dependencies {
@@ -55,4 +64,16 @@ dependencies {
     implementation 'org.tensorflow:tensorflow-lite-support:0.0.0-nightly'
     implementation files('libs/ij.jar')
     implementation files('libs/Jama-1.0.3.jar')
+
+    def work_version = "2.3.4"
+
+    // (Java only)
+    implementation "androidx.work:work-runtime:$work_version"
+
+    def room_version = "2.2.5"
+
+    implementation "androidx.room:room-runtime:$room_version"
+    annotationProcessor "androidx.room:room-compiler:$room_version"
+
+    //annotationProcessor 'com.android.databinding:compiler:3.0.1'
 }

@@ -1,4 +1,4 @@
-package ugent.waves.healthrecommenderapp.DataClasses;
+package ugent.waves.healthrecommenderapp.dataclasses;
 
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -7,18 +7,20 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
+import ugent.waves.healthrecommenderapp.Persistance.SessionActivity;
+
 public class SessionHistoryData implements Parcelable {
     private String description;
     private int imgId;
     private String turns;
     private String mets_points;
-    private List<Activity> activities;
+    private List<SessionActivity> activities;
 
-    public SessionHistoryData(String activity, int imgId, String turns, String met_points, List<Activity> activities) {
+
+    public SessionHistoryData(String activity, int imgId, int turns, List<SessionActivity> activities) {
         this.description = activity;
         this.imgId = imgId;
         this.turns = turns+"";
-        this.mets_points = met_points+"";
         this.activities = activities;
     }
 
@@ -63,7 +65,7 @@ public class SessionHistoryData implements Parcelable {
     private SessionHistoryData(Parcel in) {
         this.description = in.readString();
         this.imgId = in.readInt();
-        in.readTypedList(this.activities, Activity.CREATOR);
+        in.readTypedList(this.activities, SessionActivity.CREATOR);
         this.turns = in.readString();
         this.mets_points = in.readString();
     }

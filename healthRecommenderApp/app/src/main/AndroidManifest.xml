@@ -25,7 +25,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".RecommendationActivity"></activity>
+        <activity android:name=".HelpClasses.RecommendationActivity"></activity>
         <receiver android:name=".Services.userActivityService"  android:exported="true">
             <intent-filter>
                 <action android:name="ACTIVITY_RECOGNITION"/>

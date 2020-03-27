@@ -1,6 +1,7 @@
-package ugent.waves.healthrecommenderapp;
+package ugent.waves.healthrecommenderapp.HelpClasses;
 
 import androidx.appcompat.app.AppCompatActivity;
+import ugent.waves.healthrecommenderapp.R;
 
 import android.os.Bundle;
 

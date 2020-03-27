@@ -7,7 +7,7 @@ import android.view.ViewGroup;
 
 import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
-import ugent.waves.healthrecommenderapp.DataClasses.SessionHistoryData;
+import ugent.waves.healthrecommenderapp.dataclasses.SessionHistoryData;
 import ugent.waves.healthrecommenderapp.databinding.SessionHistoryFragmentBinding;
 
 public class SessionHistoryFragment extends Fragment {

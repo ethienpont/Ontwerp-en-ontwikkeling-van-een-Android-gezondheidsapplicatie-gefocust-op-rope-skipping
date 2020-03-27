@@ -22,10 +22,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import androidx.annotation.NonNull;
 import ugent.waves.healthrecommenderapp.Enums.JumpMoves;
-import ugent.waves.healthrecommenderapp.SavGolFilter;
+import ugent.waves.healthrecommenderapp.HelpClasses.SavGolFilter;
+import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
+import ugent.waves.healthrecommenderapp.Persistance.Session;
+import ugent.waves.healthrecommenderapp.Persistance.SessionActivity;
 import ugent.waves.healthrecommenderapp.healthRecommenderApplication;
 
 /*
@@ -73,6 +77,10 @@ public class wearableService extends WearableListenerService {
     private Map<String, List<Float>> session_heartbeat;
     private Map<String, List<Float>> session_accelerometer;
 
+    //ROOM DB
+    private Session s;
+    private List<SessionActivity> activities;
+    private AppDatabase appDb;
 
 
     //TODO: oncreate called maar onmessagereceived niet meer
@@ -85,6 +93,8 @@ public class wearableService extends WearableListenerService {
     
     public void onMessageReceived(@NonNull MessageEvent messageEvent) {
         app = (healthRecommenderApplication) this.getApplicationContext();
+        //TODO: initialise weeknr 0 bij eerste opstart
+        app.setWeeknr(0);
         firestore = app.getFirestore();
         //TODO: parameters bepalen
         filters = new HashMap<>();
@@ -93,6 +103,10 @@ public class wearableService extends WearableListenerService {
         filters.put(JumpMoves.SIDE_SWING, new SavGolFilter(0, 51, 3));
         filters.put(JumpMoves.CROSS_OVER, new SavGolFilter(0, 41, 3));
         filters.put(JumpMoves.FORWARD_180, new SavGolFilter(0, 51, 3));
+
+        s = new Session();
+        activities = new ArrayList<>();
+        appDb = app.getAppDb();
 
         //TODO: message ordering niet ok??
         if(messageEvent.getPath().equalsIgnoreCase(START) ){
@@ -145,9 +159,11 @@ public class wearableService extends WearableListenerService {
         else if(messageEvent.getPath().equalsIgnoreCase(STOP)){
             //TODO: lange delay
             try  {
-                output = getActivityPredictions();
+                //output = getActivityPredictions();
+                output = new float[]{(float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0};
                 trantitions = get_trantitions();
                 Log.d("hh", "tlukt");
+                calculateSessionData();
             } catch(Exception e){
 
                 calculateSessionData();
@@ -157,34 +173,59 @@ public class wearableService extends WearableListenerService {
     }
 
     private void calculateSessionData(){
-        //mets + turns
+        //mets + turns + weeknumber
         Map<String, String> session_calc = new HashMap<>();
         String id = UUID.randomUUID().toString();
         int turns = numberTurns();
-        double met_score = processMETscore();
-        session_calc.put("met_score", met_score+"");
+        //double met_score = processMETscore();
+        int week = app.getWeeknr();
+        //TODO: mets moet int zijn
+        //session_calc.put("met_score", met_score+"");
         session_calc.put("turns", turns+"");
+        //TODO: week moet int zijn
+        session_calc.put("week", week+"");
+        //TODO: mistakes in room
         List<Float> mistakes = mistakesTimestamps();
-        post_data(session_calc, null, id);
 
+        s.setWeek(app.getWeeknr());
+        s.setTurns(turns);
+
+        //post_data(session_calc, null, id);
+
+        /*
         //mistakes
         for (int i=0; i < mistakes.size(); i++){
             Map<String, String> mis = new HashMap<>();
             mis.put("time", mistakes.get(i)+"");
             post_data(mis, "mistakes", id);
-        }
+        }*/
 
+        double totalMets = 0;
         //activities
         for(int i = 0; i < trantitions.get("start").size(); i++){
             Map<String, String> d = new HashMap<>();
-            double start = floatToTimeDouble(trantitions.get("start").get(i));
-            double end = floatToTimeDouble(trantitions.get("end").get(i));
+            double met_score = processMETscore(trantitions.get("start").get(i), trantitions.get("end").get(i));
+            Long start = (long) floatToTimeDouble(trantitions.get("start").get(i));
+            Long end = (long) floatToTimeDouble(trantitions.get("end").get(i));
             d.put("start", start+"");
             d.put("end", end+"");
             d.put("activity", trantitions.get("activity").get(i).toString());
 
-            post_data(d, "activities", id);
+            totalMets += met_score;
+
+            SessionActivity a = new SessionActivity();
+            a.setEnd(end);
+            a.setStart(start);
+            a.setMET_score(met_score);
+
+            activities.add(a);
+
+            //post_data(d, "activities", id);
         }
+        s.setMets(totalMets);
+        //appDb.sessionDao().insertActivitiesForSession(s ,activities);
+        appDb.sessionDao().insertSession(s);
+        appDb.sessionDao().insertActivitiesForSession(s, activities);
     }
 
     private float[] getActivityPredictions(){
@@ -313,19 +354,26 @@ public class wearableService extends WearableListenerService {
     }
 
     //TODO: tijdstippen bekijken
-    private double processMETscore(){
+    //TODO: MET per activiteit
+    private double processMETscore(Float start, Float end){
+        List<Float> heartRateFiltered = session_heartbeat.get("HR").stream()
+                .filter(h -> session_heartbeat.get("time").get(session_heartbeat.get("HR").indexOf(h)) > start && session_heartbeat.get("time").get(session_heartbeat.get("HR").indexOf(h)) < end)
+                .collect(Collectors.toList());
+        List<Float> timeFiltered = session_heartbeat.get("time").stream()
+                .filter(t -> t > start && t < end)
+                .collect(Collectors.toList());
         int score = 0;
         //MPA = ligthzone, MPV = moderate zone
         double timeMPA, timeMPV;
         double sumMETmin = 0;
         timeMPA = 0;
         timeMPV = 0;
-        for(int i = 1; i < session_heartbeat.get("HR").size() ; i++){
-                if((getHeartRateZone(session_heartbeat.get("HR").get(i)) == getHeartRateZone(session_heartbeat.get("HR").get(i-1)))){
-                    if(getHeartRateZone(session_heartbeat.get("HR").get(i)) == lightZone){
-                            timeMPA += session_heartbeat.get("time").get(i) - session_heartbeat.get("HR").get(i-1);
-                    } else if(getHeartRateZone(session_heartbeat.get("HR").get(i)) == moderateZone){
-                            timeMPV += session_heartbeat.get("time").get(i) - session_heartbeat.get("HR").get(i-1);
+        for(int i = 1; i < heartRateFiltered.size() ; i++){
+                if((getHeartRateZone(heartRateFiltered.get(i)) == getHeartRateZone(session_heartbeat.get("HR").get(i-1)))){
+                    if(getHeartRateZone(heartRateFiltered.get(i)) == lightZone){
+                            timeMPA += timeFiltered.get(i) - timeFiltered.get(i-1);
+                    } else if(getHeartRateZone(heartRateFiltered.get(i)) == moderateZone){
+                            timeMPV += timeFiltered.get(i) - timeFiltered.get(i-1);
                     }
                 }
         }

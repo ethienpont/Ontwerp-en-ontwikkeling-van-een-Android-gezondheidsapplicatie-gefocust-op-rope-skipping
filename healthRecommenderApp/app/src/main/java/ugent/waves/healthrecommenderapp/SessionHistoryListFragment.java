@@ -11,7 +11,7 @@ import java.util.List;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import ugent.waves.healthrecommenderapp.DataClasses.SessionHistoryData;
+import ugent.waves.healthrecommenderapp.dataclasses.SessionHistoryData;
 
 public class SessionHistoryListFragment extends Fragment {
 

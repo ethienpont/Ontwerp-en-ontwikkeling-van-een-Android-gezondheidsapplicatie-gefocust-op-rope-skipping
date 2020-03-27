@@ -1,12 +1,14 @@
 package ugent.waves.healthrecommenderapp;
 
 import android.app.Application;
-import android.util.Log;
 
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.Calendar;
 import java.util.Date;
+
+import androidx.room.Room;
+import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
 
 public class healthRecommenderApplication extends Application {
 
@@ -16,6 +18,7 @@ public class healthRecommenderApplication extends Application {
     private int rank;
 
     private FirebaseFirestore db;
+    private AppDatabase appDb;
 
     public Long getNowMilliSec(Calendar cal){
         Date now = new Date();
@@ -60,5 +63,15 @@ public class healthRecommenderApplication extends Application {
             db = FirebaseFirestore.getInstance();
         }
         return db;
+    }
+
+    public AppDatabase getAppDb(){
+        if(appDb == null){
+            appDb = Room.databaseBuilder(getApplicationContext(),
+                    AppDatabase.class, "session-database")
+                    .fallbackToDestructiveMigration()
+                    .build();
+        }
+        return appDb;
     }
 }

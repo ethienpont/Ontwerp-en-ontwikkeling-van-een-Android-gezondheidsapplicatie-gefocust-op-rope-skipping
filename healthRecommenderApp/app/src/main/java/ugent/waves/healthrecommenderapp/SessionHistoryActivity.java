@@ -1,5 +1,6 @@
 package ugent.waves.healthrecommenderapp;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -9,6 +10,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.RingtoneManager;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -42,6 +44,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -58,9 +61,12 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
-import ugent.waves.healthrecommenderapp.DataClasses.Activity;
-import ugent.waves.healthrecommenderapp.DataClasses.SessionHistoryData;
+import ugent.waves.healthrecommenderapp.HelpClasses.goalHandler;
+import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
+import ugent.waves.healthrecommenderapp.Persistance.SessionDao;
+import ugent.waves.healthrecommenderapp.Persistance.SessionWithActivities;
 import ugent.waves.healthrecommenderapp.Services.userActivityService;
+import ugent.waves.healthrecommenderapp.dataclasses.SessionHistoryData;
 
 //TODO: show start + end time rope skipping session
 //TODO: show turns + mistake timestamps
@@ -95,6 +101,8 @@ public class SessionHistoryActivity extends AppCompatActivity {
     private ArrayList<ActivityTransition> transitions;
     private PendingIntent pendingIntent;
 
+    private AppDatabase appDb;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -124,6 +132,8 @@ public class SessionHistoryActivity extends AppCompatActivity {
                 .build();
 
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
+
+        appDb = app.getAppDb();
 
         //TODO: voor firebase auth moet iedere keer expliciet ingelogd worden...
         //account = GoogleSignIn.getLastSignedInAccount(this);
@@ -176,6 +186,11 @@ public class SessionHistoryActivity extends AppCompatActivity {
             
             //initialize firestore db
             db = app.getFirestore();
+
+            get_session_data();
+
+            goalHandler g = new goalHandler(null, this, app);
+            g.generateRecommendations();
         }
     }
 
@@ -284,7 +299,24 @@ public class SessionHistoryActivity extends AppCompatActivity {
                 return t;
     }
 
+    //TODO: activities leeg
     private void get_session_data(){
+        try{
+            //List<SessionWithActivities> s =  appDb.sessionDao().getSessionsWithActivities();
+            List<SessionWithActivities> s = new SessionAsyncTask(this, appDb).execute().get();
+
+            String activity = "rope skipping";
+            int imgId = getImage(activity);
+            for(SessionWithActivities sessionWithActivities: s){
+                SessionHistoryData s_recyclerview = new SessionHistoryData(activity, imgId, sessionWithActivities.session.getTurns(), sessionWithActivities.activities);
+                data.add(s_recyclerview);
+            }
+            showRecyclerView();
+            Log.e(TAG, "ok");
+        } catch(Exception e){
+            Log.e(TAG, e.getMessage());
+        }
+        /*
         db.collection("users")
                 .document("testUser")
                 .collection("sessions")
@@ -302,13 +334,16 @@ public class SessionHistoryActivity extends AppCompatActivity {
                             .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                                 @Override
                                 public void onSuccess(QuerySnapshot q) {
+
                                     List<Activity> activities = new ArrayList<>();
+
                                     for(DocumentSnapshot d: q.getDocuments()){
                                         Activity a = new Activity(d.get("start").toString(), d.get("end").toString(), d.get("activity").toString());
                                         activities.add(a);
                                     }
                                     SessionHistoryData s = new SessionHistoryData(activity, imgId, turns, mets, activities);
                                     data.add(s);
+                                    showRecyclerView();
                                 }
                             });
                         }
@@ -319,7 +354,7 @@ public class SessionHistoryActivity extends AppCompatActivity {
                     public void onFailure(@NonNull Exception e) {
                         Log.w("l", "Error writing document", e);
                     }
-                });
+                });*/
     }
 
     private void sendRecommendation(int rank){
@@ -604,6 +639,41 @@ public class SessionHistoryActivity extends AppCompatActivity {
                         }
                     }
                 });
+    }
+
+
+    private static class SessionAsyncTask extends AsyncTask<Void, Void, List<SessionWithActivities>> {
+        //Prevent leak
+        private WeakReference<Activity> weakActivity;
+        private AppDatabase db;
+
+        public SessionAsyncTask(Activity activity, AppDatabase db) {
+            weakActivity = new WeakReference<>(activity);
+            this.db = db;
+        }
+
+        @Override
+        protected List<SessionWithActivities> doInBackground(Void... params) {
+            SessionDao sessionDao = db.sessionDao();
+            return sessionDao.getSessionsWithActivities();
+        }
+
+        @Override
+        protected void onPostExecute(List<SessionWithActivities> agentsCount) {
+            /*
+            Activity activity = weakActivity.get();
+            if(activity == null) {
+                return;
+            }
+
+            if (agentsCount > 0) {
+                //2: If it already exists then prompt user
+                Toast.makeText(activity, "Agent already exists!", Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(activity, "Agent does not exist! Hurray :)", Toast.LENGTH_LONG).show();
+                activity.onBackPressed();
+            }*/
+        }
     }
 
 }

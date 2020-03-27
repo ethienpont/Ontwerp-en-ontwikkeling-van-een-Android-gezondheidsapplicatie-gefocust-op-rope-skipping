@@ -1,4 +1,4 @@
-package ugent.waves.healthrecommenderapp;
+package ugent.waves.healthrecommenderapp.HelpClasses;
 
 
 import Jama.LUDecomposition;

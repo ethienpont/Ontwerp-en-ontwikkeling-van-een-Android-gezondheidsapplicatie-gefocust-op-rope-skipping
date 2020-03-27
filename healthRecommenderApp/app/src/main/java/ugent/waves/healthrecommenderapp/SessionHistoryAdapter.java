@@ -13,7 +13,7 @@ import java.util.List;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView.ViewHolder;
 import androidx.recyclerview.widget.RecyclerView.Adapter;
-import ugent.waves.healthrecommenderapp.DataClasses.SessionHistoryData;
+import ugent.waves.healthrecommenderapp.dataclasses.SessionHistoryData;
 
 public class SessionHistoryAdapter extends Adapter<SessionHistoryAdapter.SessionViewHolder> {
     private final Context context;
@@ -58,8 +58,6 @@ public class SessionHistoryAdapter extends Adapter<SessionHistoryAdapter.Session
     @Override
     public void onBindViewHolder(SessionViewHolder holder, final int position) {
         holder.activity.setText(mDataset.get(position).getDescription());
-        holder.startTime.setText(mDataset.get(position).getStartTime().toString());
-        holder.endTime.setText(mDataset.get(position).getEndTime().toString());
         holder.imageView.setImageResource(mDataset.get(position).getImgId());
         holder.relativeLayout.setOnClickListener(new View.OnClickListener() {
             @Override
