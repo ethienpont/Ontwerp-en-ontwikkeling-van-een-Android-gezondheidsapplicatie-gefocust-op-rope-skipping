@@ -5,8 +5,11 @@ import android.app.AlertDialog;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.media.RingtoneManager;
 import android.net.Uri;
@@ -30,6 +33,7 @@ import com.google.android.gms.fitness.request.SessionReadRequest;
 import com.google.android.gms.fitness.result.SessionReadResponse;
 import com.google.android.gms.location.ActivityRecognition;
 import com.google.android.gms.location.ActivityTransition;
+import com.google.android.gms.location.ActivityTransitionRequest;
 import com.google.android.gms.location.DetectedActivity;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -40,7 +44,6 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 
@@ -52,6 +55,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import androidx.annotation.NonNull;
@@ -63,14 +67,17 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import ugent.waves.healthrecommenderapp.HelpClasses.goalHandler;
 import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
+import ugent.waves.healthrecommenderapp.Persistance.Recommendation;
+import ugent.waves.healthrecommenderapp.Persistance.RecommendationDao;
 import ugent.waves.healthrecommenderapp.Persistance.SessionDao;
 import ugent.waves.healthrecommenderapp.Persistance.SessionWithActivities;
+import ugent.waves.healthrecommenderapp.Services.NotificationCallback;
 import ugent.waves.healthrecommenderapp.Services.userActivityService;
 import ugent.waves.healthrecommenderapp.dataclasses.SessionHistoryData;
 
 //TODO: show start + end time rope skipping session
 //TODO: show turns + mistake timestamps
-public class SessionHistoryActivity extends AppCompatActivity {
+public class SessionHistoryActivity extends AppCompatActivity implements NotificationCallback {
 
     //recycler view
     private List<SessionHistoryData> data = new ArrayList<SessionHistoryData>();
@@ -135,6 +142,8 @@ public class SessionHistoryActivity extends AppCompatActivity {
 
         appDb = app.getAppDb();
 
+        registerReceiver(broadcastReceiver, new IntentFilter("SEND_NOTIFICATION"));
+
         //TODO: voor firebase auth moet iedere keer expliciet ingelogd worden...
         //account = GoogleSignIn.getLastSignedInAccount(this);
         if(account == null){
@@ -161,7 +170,7 @@ public class SessionHistoryActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        /*
+        unregisterReceiver(broadcastReceiver);
         ActivityRecognition.getClient(this)
                 .removeActivityTransitionUpdates(pendingIntent)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
@@ -175,7 +184,7 @@ public class SessionHistoryActivity extends AppCompatActivity {
                     public void onFailure(@NonNull Exception e) {
                         Log.e(TAG, "suc");
                     }
-                });*/
+                });
     }
 
     private void accessApp(){
@@ -190,7 +199,8 @@ public class SessionHistoryActivity extends AppCompatActivity {
             get_session_data();
 
             goalHandler g = new goalHandler(null, this, app);
-            g.generateRecommendations();
+            //g.generateRecommendations();
+            initActivityDetection();
         }
     }
 
@@ -221,13 +231,15 @@ public class SessionHistoryActivity extends AppCompatActivity {
                         .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
                         .build());
 
+        ActivityTransitionRequest request = new ActivityTransitionRequest(transitions);
+
         Intent i = new Intent(this, userActivityService.class);
         i.setAction("ACTIVITY_RECOGNITION");
 
         pendingIntent = PendingIntent.getBroadcast(this, 7, i, PendingIntent.FLAG_UPDATE_CURRENT);
 
         ActivityRecognition.getClient(this)
-                .requestActivityUpdates(1000, pendingIntent)
+                .requestActivityTransitionUpdates(request, pendingIntent)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {
@@ -316,70 +328,29 @@ public class SessionHistoryActivity extends AppCompatActivity {
         } catch(Exception e){
             Log.e(TAG, e.getMessage());
         }
-        /*
-        db.collection("users")
-                .document("testUser")
-                .collection("sessions")
-                .get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot d) {
-                        for(DocumentSnapshot doc : d.getDocuments()){
-                            String activity = "rope skipping";
-                            int imgId = getImage(activity);
-                            String turns = doc.get("turns") == null ? null : doc.get("turns").toString();
-                            String mets = doc.get("met_points") == null ? null : doc.get("met_points").toString();
-
-                            get_activity_data(doc.getId())
-                            .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                                @Override
-                                public void onSuccess(QuerySnapshot q) {
-
-                                    List<Activity> activities = new ArrayList<>();
-
-                                    for(DocumentSnapshot d: q.getDocuments()){
-                                        Activity a = new Activity(d.get("start").toString(), d.get("end").toString(), d.get("activity").toString());
-                                        activities.add(a);
-                                    }
-                                    SessionHistoryData s = new SessionHistoryData(activity, imgId, turns, mets, activities);
-                                    data.add(s);
-                                    showRecyclerView();
-                                }
-                            });
-                        }
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.w("l", "Error writing document", e);
-                    }
-                });*/
     }
 
-    private void sendRecommendation(int rank){
-        db.collection("users")
-                .document("testUser")
-                .collection("recommendations")
-                .whereEqualTo("rank", 0)
-                .get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot d) {
-                        for(DocumentSnapshot doc : d.getDocuments()){
-                            String activity = (String) doc.get("activity");
-                            Double duration = (Double) doc.get("duration");
-                            sendNotification(activity+duration);
-                        }
-                        //TODO: update rank
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.w("l", "Error writing document", e);
-                    }
-                });
+        /*
+    RECOMMENDATION NOTIFICATION
+     */
+        BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                sendRecommendation();
+            }
+        };
+
+    @Override
+    public void sendRecommendation(){
+        //TODO: get rank from app
+        try {
+            Recommendation r = new RecommendationAsyncTask(this, appDb, 0).execute().get();
+            sendNotification(r.getActivity()+r.getDuration()+"");
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private void sendNotification(String messageBody) {
@@ -673,6 +644,25 @@ public class SessionHistoryActivity extends AppCompatActivity {
                 Toast.makeText(activity, "Agent does not exist! Hurray :)", Toast.LENGTH_LONG).show();
                 activity.onBackPressed();
             }*/
+        }
+    }
+
+    private static class RecommendationAsyncTask extends AsyncTask<Void, Void, Recommendation> {
+        //Prevent leak
+        private WeakReference<Activity> weakActivity;
+        private AppDatabase db;
+        private int rank;
+
+        public RecommendationAsyncTask(Activity activity, AppDatabase db, int rank) {
+            weakActivity = new WeakReference<>(activity);
+            this.db = db;
+            this.rank = rank;
+        }
+
+        @Override
+        protected Recommendation doInBackground(Void... params) {
+            RecommendationDao recommendationDao = db.recommendationDao();
+            return recommendationDao.getRecommendationWithRank(rank);
         }
     }
 

@@ -21,6 +21,9 @@ public class Recommendation {
     @ColumnInfo(name = "duration")
     private Long duration;
 
+    @ColumnInfo(name = "rank")
+    private int rank;
+
     public int getActivity() {
         return activity;
     }
@@ -51,5 +54,13 @@ public class Recommendation {
 
     public void setUid(@NonNull int uid) {
         this.uid = uid;
+    }
+
+    public int getRank() {
+        return rank;
+    }
+
+    public void setRank(int rank) {
+        this.rank = rank;
     }
 }

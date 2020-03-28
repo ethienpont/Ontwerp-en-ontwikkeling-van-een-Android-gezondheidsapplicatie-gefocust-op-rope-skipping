@@ -355,6 +355,7 @@ public class wearableService extends WearableListenerService {
 
     //TODO: tijdstippen bekijken
     //TODO: MET per activiteit
+    //TODO: wat als geen heartdata
     private double processMETscore(Float start, Float end){
         List<Float> heartRateFiltered = session_heartbeat.get("HR").stream()
                 .filter(h -> session_heartbeat.get("time").get(session_heartbeat.get("HR").indexOf(h)) > start && session_heartbeat.get("time").get(session_heartbeat.get("HR").indexOf(h)) < end)

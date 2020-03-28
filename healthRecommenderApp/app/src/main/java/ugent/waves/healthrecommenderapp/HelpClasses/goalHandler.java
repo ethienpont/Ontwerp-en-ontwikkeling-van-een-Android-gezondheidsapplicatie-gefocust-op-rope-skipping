@@ -5,9 +5,7 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QuerySnapshot;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -23,6 +21,7 @@ import androidx.work.WorkerParameters;
 import ugent.waves.healthrecommenderapp.Persistance.ActivityDao;
 import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
 import ugent.waves.healthrecommenderapp.Persistance.Recommendation;
+import ugent.waves.healthrecommenderapp.Persistance.RecommendationDao;
 import ugent.waves.healthrecommenderapp.Persistance.Session;
 import ugent.waves.healthrecommenderapp.Persistance.SessionActivity;
 import ugent.waves.healthrecommenderapp.Persistance.SessionDao;
@@ -90,28 +89,6 @@ public class goalHandler {//extends Worker {
         }
     }
 
-    private Task<QuerySnapshot> readSessionData(){
-        //weeknr -> score
-        Task<QuerySnapshot> t = db.collection("users")
-                .document("testUser")
-                .collection("sessions")
-                .whereGreaterThanOrEqualTo("week", app.getWeeknr()-10)
-                .get();
-
-        return t;
-    }
-
-    private Task<QuerySnapshot> get_activity_data(String id){
-        //haal activities op
-        Task<QuerySnapshot>  t = db.collection("users")
-                .document("testUser")
-                .collection("sessions")
-                .document(id)
-                .collection("activities")
-                .get();
-
-        return t;
-    }
 
     public void getActivityData(){
         try {
@@ -132,9 +109,11 @@ public class goalHandler {//extends Worker {
         return list;
     }
 
+    //TODO: rank
     public void generateRecommendations(){
-        //TODO: delete previous recommendations
         try {
+            //TODO: door async niet ok??
+            new RecommendationAsyncTask((Activity) context, appDb).execute();
             SessionActivity[] activities = new ActivityAsyncTask((Activity) context, appDb).execute().get();
 
             //Count
@@ -178,6 +157,8 @@ public class goalHandler {//extends Worker {
 
             //recommendations
             double recommendedMets = 0;
+            //TODO: betere rank
+            int rank = 0;
 
             //TODO: wat als nog geen activiteiten
             while(recommendedMets < 100){
@@ -190,10 +171,12 @@ public class goalHandler {//extends Worker {
                 r.setActivity(Integer.parseInt(act));
                 r.setDuration(duration);
                 r.setMets(mets);
+                r.setRank(rank);
 
                 AsyncTask.execute(() -> appDb.recommendationDao().insertRecommendation(r));
 
                 recommendedMets += mets;
+                rank++;
             }
 
         } catch (ExecutionException e) {
@@ -260,10 +243,23 @@ public class goalHandler {//extends Worker {
             ActivityDao activityDao = db.activityDao();
             return activityDao.getAllActivities();
         }
+    }
+
+    private static class RecommendationAsyncTask extends AsyncTask<Void, Void, Void> {
+        //Prevent leak
+        private WeakReference<Activity> weakActivity;
+        private AppDatabase db;
+
+        public RecommendationAsyncTask(Activity activity, AppDatabase db) {
+            weakActivity = new WeakReference<>(activity);
+            this.db = db;
+        }
 
         @Override
-        protected void onPostExecute(SessionActivity[] agentsCount) {
-
+        protected Void doInBackground(Void... params) {
+            RecommendationDao recommendationDao = db.recommendationDao();
+            recommendationDao.deleteAllRecommendations();
+            return null;
         }
     }
 

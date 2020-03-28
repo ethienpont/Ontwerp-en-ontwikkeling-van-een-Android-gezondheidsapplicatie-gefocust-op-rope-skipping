@@ -15,10 +15,14 @@ public class healthRecommenderApplication extends Application {
     //TODO: iedere week resetten
     private int weeknr;
     private int goal;
-    private int rank;
+
+    private long timeStill;
+    private long startStill;
 
     private FirebaseFirestore db;
     private AppDatabase appDb;
+
+    private int rank;
 
     public Long getNowMilliSec(Calendar cal){
         Date now = new Date();
@@ -73,5 +77,29 @@ public class healthRecommenderApplication extends Application {
                     .build();
         }
         return appDb;
+    }
+
+    public long getTimeStill() {
+        return timeStill;
+    }
+
+    public void setTimeStill(long timeStill) {
+        this.timeStill = timeStill;
+    }
+
+    public long getStartStill() {
+        return startStill;
+    }
+
+    public void setStartStill(long startStill) {
+        this.startStill = startStill;
+    }
+
+    public int getRank() {
+        return rank;
+    }
+
+    public void setRank(int rank) {
+        this.rank = rank;
     }
 }
