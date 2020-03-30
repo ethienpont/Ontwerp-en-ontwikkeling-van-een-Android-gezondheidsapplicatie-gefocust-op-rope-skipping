@@ -33,11 +33,12 @@ public class SessionActivity implements Parcelable {
 
     }
 
-    public SessionActivity(int sessionId, Long start, Long end, double MET_score) {
+    public SessionActivity(int sessionId, Long start, Long end, double MET_score, int activity) {
         this.sessionId = sessionId;
         this.start = start;
         this.end = end;
         this.MET_score = MET_score;
+        this.activity = activity;
     }
 
     protected SessionActivity(Parcel in) {

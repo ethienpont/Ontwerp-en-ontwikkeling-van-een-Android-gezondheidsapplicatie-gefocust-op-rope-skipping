@@ -1,20 +1,18 @@
 package ugent.waves.healthrecommenderapp.Services;
 
-import android.util.Log;
-
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.WearableListenerService;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import org.tensorflow.lite.DataType;
 import org.tensorflow.lite.Interpreter;
+import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -48,7 +46,7 @@ import ugent.waves.healthrecommenderapp.healthRecommenderApplication;
 public class wearableService extends WearableListenerService {
     //TODO: save sessions to room db??
 
-    private float[] output;
+    private List<JumpMoves> output;
 
     //"start", "end", "activity"
     private Map<String, List<Float>> trantitions;
@@ -121,7 +119,7 @@ public class wearableService extends WearableListenerService {
             session_heartbeat.put("HR", new ArrayList<>());
 
         }
-
+        //TODO: eerste en laatste 3 sec ervan doen?
         else if( messageEvent.getPath().equalsIgnoreCase(ACCELEROMETER) ){
             FloatBuffer values = ByteBuffer.wrap(messageEvent.getData()).asFloatBuffer();
             final float[] dst = new float[values.capacity()];
@@ -133,10 +131,15 @@ public class wearableService extends WearableListenerService {
                 session_accelerometer.put("y", new ArrayList<>());
                 session_accelerometer.put("z", new ArrayList<>());
             }
-            session_accelerometer.get("time").add(dst[0]);
-            session_accelerometer.get("x").add(dst[1]);
-            session_accelerometer.get("y").add(dst[2]);
-            session_accelerometer.get("z").add(dst[3]);
+            //check for duplicate datapoints
+            //dezelfde accelerometer waarde wordt kort na elkaar soms meerdere keren gesampled, dus kijken nr tijd werkt niet
+            //TODO: check of door deleten van samples, samplingfreq wel nog ok is
+            if(session_accelerometer.get("x").size() == 0 || session_accelerometer.get("x").get(session_accelerometer.get("x").size()-1) != dst[1]){
+                session_accelerometer.get("time").add(dst[0]);
+                session_accelerometer.get("x").add(dst[1]);
+                session_accelerometer.get("y").add(dst[2]);
+                session_accelerometer.get("z").add(dst[3]);
+            }
         }
 
         else if(messageEvent.getPath().equalsIgnoreCase(HEARTRATE)){
@@ -149,25 +152,19 @@ public class wearableService extends WearableListenerService {
                 session_heartbeat.put("time", new ArrayList<>());
                 session_heartbeat.put("HR", new ArrayList<>());
             }
-
-            session_heartbeat.get("time").add(dst[0]);
-            session_heartbeat.get("HR").add(dst[1]);
-
-            Log.e(HEARTRATE, dst[0]+"" + dst[1]);
+            //check for duplicate datapoints
+            if(session_heartbeat.get("time").size() == 0 || session_heartbeat.get("time").get(session_heartbeat.get("time").size()-1) != dst[0]){
+                session_heartbeat.get("time").add(dst[0]);
+                session_heartbeat.get("HR").add(dst[1]);
+            }
         }
-
         else if(messageEvent.getPath().equalsIgnoreCase(STOP)){
-            //TODO: lange delay
             try  {
-                //output = getActivityPredictions();
-                getActivityPredictions();
-                //output = new float[]{(float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0};
+                output = getActivityPredictions();
                 trantitions = get_trantitions();
-                Log.d("hh", "tlukt");
                 calculateSessionData();
             } catch(Exception e){
-
-                calculateSessionData();
+                e.printStackTrace();
 
             }
         }
@@ -204,13 +201,10 @@ public class wearableService extends WearableListenerService {
         double totalMets = 0;
         //activities
         for(int i = 0; i < trantitions.get("start").size(); i++){
-            Map<String, String> d = new HashMap<>();
             double met_score = processMETscore(trantitions.get("start").get(i), trantitions.get("end").get(i));
             Long start = (long) floatToTimeDouble(trantitions.get("start").get(i));
             Long end = (long) floatToTimeDouble(trantitions.get("end").get(i));
-            d.put("start", start+"");
-            d.put("end", end+"");
-            d.put("activity", trantitions.get("activity").get(i).toString());
+            int act = (int) Float.parseFloat(String.valueOf(trantitions.get("activity").get(i)));
 
             totalMets += met_score;
 
@@ -218,6 +212,7 @@ public class wearableService extends WearableListenerService {
             a.setEnd(end);
             a.setStart(start);
             a.setMET_score(met_score);
+            a.setActivity(act);
 
             activities.add(a);
 
@@ -229,63 +224,45 @@ public class wearableService extends WearableListenerService {
         appDb.sessionDao().insertActivitiesForSession(s, activities);
     }
 
-    private Object getActivityPredictions(){
+    private List<JumpMoves> getActivityPredictions(){
         File sdcard = getExternalFilesDir(null);
         Interpreter interpreter = new Interpreter(new File(sdcard != null ? sdcard.getAbsolutePath() : null, "converted_model2.tflite"));
-        float[][][][] input = segmentation();
-        //TODO: transform output naar enum
-        /*
-        Map<Integer, Object> out = new HashMap<>();
-        for(int i=0; i<input.length; i++){
-            out.put(i, new Object());
-        }*/
-        Object out = new Object();
-        //final ByteBuffer buffer = ByteBuffer.allocate(input.size()*input.get(0).size()*input.get(0).get(0).size()*4);
-        //buffer.put(input);
-        interpreter.run(input, out);
+        float[][][] segments = segmentation();
+
+        List<JumpMoves> out = new ArrayList<>();
+        int[] probabilityShape =
+                interpreter.getOutputTensor(0).shape();
+        DataType probabilityDataType = interpreter.getOutputTensor(0).dataType();
+
+        for(float[][] segment: segments){
+            float[][][] s = new float[1][segment.length][segment[0].length];
+            TensorBuffer outputProbabilityBuffer = TensorBuffer.createFixedSize(probabilityShape, probabilityDataType);
+
+            interpreter.run(s, outputProbabilityBuffer.getBuffer());
+            out.add(getMostProbable(outputProbabilityBuffer.getFloatArray()));
+        }
         return out;
     }
 
-    private void post_data(Map<String, String> data, String path, String id){
-        if(path != null){
-            firestore.collection("users")
-                    .document("testUser")
-                    .collection("sessions")
-                    .document(id)
-                    .collection(path)
-                    .add(data)
-                    .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
-                        @Override
-                        public void onSuccess(DocumentReference documentReference) {
-                            Log.d("dd", "DocumentSnapshot added with ID: " + documentReference.getId());
-                        }
-                    })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            Log.w("dd", "Error adding document", e);
-                        }
-                    });
+    private JumpMoves getMostProbable(float[] floatArray) {
+        //TODO: determine threshold for probability
+        Map<Float, Integer> m = arrayToMap(floatArray);
+        Arrays.sort(floatArray);
+        if(floatArray[floatArray.length-1] > 0.80){
+            return JumpMoves.getJump(m.get(floatArray[floatArray.length-1]));
         } else{
-            firestore.collection("users")
-                    .document("testUser")
-                    .collection("sessions")
-                    .document(id)
-                    .set(data)
-                    .addOnSuccessListener(new OnSuccessListener<Void>() {
-                        @Override
-                        public void onSuccess(Void aVoid) {
-                            Log.w("dd", "Error adding document");
-                        }
-                    })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            Log.w("dd", "Error adding document", e);
-                        }
-                    });
+            return JumpMoves.OTHER;
         }
     }
+
+    private Map<Float,Integer> arrayToMap(float[] floatArray) {
+        Map<Float,Integer> probabilities = new HashMap<>();
+        for(int i=0; i<floatArray.length; i++){
+            probabilities.put(floatArray[i], i);
+        }
+        return probabilities;
+    }
+
 
     /*
     SESSION CALCULATIONS
@@ -331,32 +308,54 @@ public class wearableService extends WearableListenerService {
         return count;
     }
 
-    //TODO: voor elke afzonderlijke beweging -> optellen (return)
+    //TODO: finetunen
     private int numberTurns(){
+        //TODO: put in different place
+        Map<JumpMoves, Integer> iterations = new HashMap<>();
+        iterations.put(JumpMoves.SLOW, 3);
+        iterations.put(JumpMoves.FAST, 5);
+        iterations.put(JumpMoves.CROSS_OVER, 2);
+        iterations.put(JumpMoves.SIDE_SWING, 2);
+        iterations.put(JumpMoves.FORWARD_180, 2);
+
         Map<JumpMoves, Integer> turns = new HashMap<>();
         turns.put(JumpMoves.SLOW, 0);
+        turns.put(JumpMoves.FAST, 0);
+        turns.put(JumpMoves.CROSS_OVER, 0);
+        turns.put(JumpMoves.SIDE_SWING, 0);
+        turns.put(JumpMoves.FORWARD_180, 0);
+
         float [] x_savgol,y_savgol, z_savgol;
         int x_turns, y_turns, z_turns;
+        int sum_turns = 0;
+
         //voor elke activiteit bereken draaiingen
         for(int i = 0; i < trantitions.get("start").size(); i++){
-           //TODO: if -> voor elke afzonderlijke beweging
-            if(true){
-                SavGolFilter f = filters.get(JumpMoves.SLOW);
-                //TODO: aantal keer toepassen
-                x_savgol = f.filterData(Floattofloat(session_accelerometer.get("x")));
-                y_savgol = f.filterData(Floattofloat(session_accelerometer.get("y")));
-                z_savgol = f.filterData(Floattofloat(session_accelerometer.get("z")));
+            int act = (int) Float.parseFloat(String.valueOf(trantitions.get("activity").get(i)));
+            SavGolFilter f = filters.get(JumpMoves.getJump(act));
 
-                //TODO: savgol geeft overal zelfde waarde
-                x_turns = localMaxima(x_savgol);
-                y_turns = localMaxima(y_savgol);
-                z_turns = localMaxima(z_savgol);
+            x_savgol = f.filterData(Floattofloat(session_accelerometer.get("x")));
+            y_savgol = f.filterData(Floattofloat(session_accelerometer.get("y")));
+            z_savgol = f.filterData(Floattofloat(session_accelerometer.get("z")));
 
-                turns.put(JumpMoves.SLOW,turns.get(JumpMoves.SLOW) + ((x_turns+y_turns+z_turns)/3));
+            for(int j = 0; j < iterations.get(JumpMoves.getJump(act))-1; j++){
+                x_savgol = f.filterData(x_savgol);
+                y_savgol = f.filterData(y_savgol);
+                z_savgol = f.filterData(z_savgol);
             }
 
+            x_turns = localMaxima(x_savgol);
+            y_turns = localMaxima(y_savgol);
+            z_turns = localMaxima(z_savgol);
+
+            turns.put(JumpMoves.getJump(act),turns.get(JumpMoves.getJump(act)) + ((x_turns+y_turns+z_turns)/3));
         }
-        return 0;
+
+        for(int t: turns.values()){
+            sum_turns += t;
+        }
+
+        return sum_turns;
     }
 
     //TODO: tijdstippen bekijken
@@ -417,39 +416,32 @@ public class wearableService extends WearableListenerService {
 
     //TODO: sampling mss in realtime schatten?
     private int getSamplingFrequentie(){
-        return 51;
+        return 52;
     }
 
-    //TODO: reshape zodat individuele samples samenzitten in een array
     //TODO: hopsize
-    private float[][][][] segmentation(){
+    private float[][][] segmentation(){
         int N_FEATURES = 3;
         int FRAME_SIZE = getSamplingFrequentie() * 1;
 
-        List<float[][][]> frames = new ArrayList<>();
+        List<float[][]> frames = new ArrayList<>();
 
         for( int i = 0; i < session_accelerometer.get("x").size() - FRAME_SIZE; i += FRAME_SIZE){
-
-
-            //TODO: list to segment!!!
-
-
-            float[][] x = float1DTo2D(Floattofloat(session_accelerometer.get("x").subList(i, i+FRAME_SIZE)));
-            float[][] y = float1DTo2D(Floattofloat(session_accelerometer.get("y").subList(i, i+FRAME_SIZE)));
-            float[][] z = float1DTo2D(Floattofloat(session_accelerometer.get("z").subList(i, i+FRAME_SIZE)));
-
-            float[][][] segment = new float[3][FRAME_SIZE][1];
-            //ByteBuffer segment = ByteBuffer.allocate(3*x.position());
-            segment[0] = x;
-            segment[1] = y;
-            segment[2] = z;
+            float[][] segment = listTosegment(session_accelerometer.get("x").subList(i, i+FRAME_SIZE), session_accelerometer.get("y").subList(i, i+FRAME_SIZE), session_accelerometer.get("x").subList(i, i+FRAME_SIZE));
 
             frames.add(segment);
         }
 
-        //frames = np.asarray(frames).reshape(-1, frame_size, N_FEATURES)
+        return floatListTofloat3D(frames);
+    }
 
-        return floatListTofloat4D(frames);
+    private float[][][] floatListTofloat3D(List<float[][]> l) {
+        float[][][] floatArray = new float[l.size()][l.get(0).length][l.get(0)[0].length];
+        int i = 0;
+        for (float[][] f : l) {
+            floatArray[i++] = f;
+        }
+        return floatArray;
     }
 
     private float[][] listTosegment(List<Float> x, List<Float> y, List<Float> z){
@@ -470,26 +462,26 @@ public class wearableService extends WearableListenerService {
 
     //TODO: met overlap omgaan
     private Map<String, List<Float>> get_trantitions() {
-        Map<Integer,Float> t = makeActivities();
+        Map<Integer,JumpMoves> t = makeActivities();
         int FRAME_SIZE = getSamplingFrequentie() * 1;
-        int HOP_SIZE = 1;
         //start, end, activiteit
         Map<String, List<Float>> trantitions_ = new HashMap<>();
         trantitions_.put("start", new ArrayList<>());
         trantitions_.put("end", new ArrayList<>());
         trantitions_.put("activity", new ArrayList<>());
 
+        //get indexes in order of when activity started
         List<Integer> indexes=new ArrayList(t.keySet());
         Collections.sort(indexes);
 
         float end, start;
         if(indexes.size() == 1){
-            int numberSensorSamples = (output.length)*FRAME_SIZE; //TODO: drop partial frames
+            int numberSensorSamples = (output.size())*FRAME_SIZE; //TODO: drop partial frames
             start = session_accelerometer.get("time").get(0);
-            end = session_accelerometer.get("time").get(1); //TODO: remove dummydata (make number samples correct)
+            end = session_accelerometer.get("time").get(numberSensorSamples);
             trantitions_.get("start").add(start);
             trantitions_.get("end").add(end);
-            trantitions_.get("activity").add(t.get(0));
+            trantitions_.get("activity").add((float) t.get(0).getValue());
         } else{
             int indexTime = 0;
             for (int i = 0; i<indexes.size()-1; i++) {
@@ -498,7 +490,7 @@ public class wearableService extends WearableListenerService {
                 end = session_accelerometer.get("time").get(indexTime+numberSensorSamples);
                 trantitions_.get("start").add(start);
                 trantitions_.get("end").add(end);
-                trantitions_.get("activity").add(t.get(i));
+                trantitions_.get("activity").add((float) t.get(i).getValue());
 
                 indexTime = indexTime+numberSensorSamples;
             }
@@ -509,18 +501,18 @@ public class wearableService extends WearableListenerService {
 
     //map start index uit output array op de activity die daar begint
     //OUTPUT: index1 -> activiteit1, index2 -> activiteit2....
-    private Map<Integer,Float> makeActivities(){
-        Map<Integer,Float> t = new HashMap<>();
-        float activity = output[0];
+    private Map<Integer,JumpMoves> makeActivities(){
+        Map<Integer,JumpMoves> t = new HashMap<>();
+        JumpMoves activity = output.get(0);
         int start = 0;
-        for (int i = 1; i < output.length-1; i++) {
-            if(output[i] != output[i-1]){
-                t.put(start, output[start]);
+        for (int i = 1; i < output.size()-1; i++) {
+            if(output.get(i) != output.get(i-1)){
+                t.put(start, output.get(start));
                 start = i;
             }
         }
         if(t.size() == 0){
-            t.put(start, output[start]);
+            t.put(start, output.get(start));
         }
         //beginindex uit output array gemapt op waarde
         return t;
