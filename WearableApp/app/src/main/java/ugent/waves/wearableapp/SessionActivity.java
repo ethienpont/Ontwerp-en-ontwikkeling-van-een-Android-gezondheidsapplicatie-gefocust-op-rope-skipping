@@ -372,112 +372,6 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
                         }
                     }
                 });
-        //ACCELEROMETER
-        /*
-        for(Map point : accelero_dataPoints){
-            firestore.collection("users")
-                    .document("testUser")
-                    .collection("sessions")
-                    .document("rope_skipping_accelerometer")
-                    .collection(currentSession)
-                    .add(point)
-                    .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
-                        @Override
-                        public void onSuccess(DocumentReference documentReference) {
-                            Log.d(TAG, "DocumentSnapshot added with ID: " + documentReference.getId());
-                        }
-                    })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            Log.w(TAG, "Error adding document", e);
-                        }
-                    });
-        }
-        HashMap<String,Object> sessionId = new HashMap<>();
-        sessionId.put("id",currentSession);
-        firestore.collection("users")
-                .document("testUser")
-                .collection("sessions")
-                .document("rope_skipping_accelerometer")
-                .collection("session_ids")
-                .add(sessionId)
-                .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
-                    @Override
-                    public void onSuccess(DocumentReference documentReference) {
-                        Log.d(TAG, "DocumentSnapshot added with ID: " + documentReference.getId());
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.w(TAG, "Error adding document", e);
-                    }
-                });
-        firestore.collection("users")
-                .document("testUser")
-                .collection("sessionCalculations")
-                .document(currentSession)
-                .set(sessionId)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        Log.w(TAG, "Error adding document");
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.w(TAG, "Error adding document", e);
-                    }
-                });
-
-        //HEART RATE
-        for(Map point : heart_rate_dataPoints){
-            firestore.collection("users")
-                    .document("testUser")
-                    .collection("sessions")
-                    .document("rope_skipping_heart_rate")
-                    .collection(currentSession)
-                    .add(point)
-                    .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
-                        @Override
-                        public void onSuccess(DocumentReference documentReference) {
-                            Log.d(TAG, "DocumentSnapshot added with ID: " + documentReference.getId());
-                        }
-                    })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            Log.w(TAG, "Error adding document", e);
-                        }
-                    });
-        }*/
-        /*TODO: niet hier history opvragen
-        final DocumentReference docRef = firestore.collection("users")
-                .document("testUser")
-                .collection("sessionCalculations")
-                .document(currentSession);
-        docRef.addSnapshotListener(new EventListener<DocumentSnapshot>() {
-            @Override
-            public void onEvent(@Nullable DocumentSnapshot snapshot,
-                                @Nullable FirebaseFirestoreException e) {
-                if (e != null) {
-                    Log.w(TAG, "Listen failed.", e);
-                    return;
-                }
-
-                String source = snapshot != null && snapshot.getMetadata().hasPendingWrites()
-                        ? "Local" : "Server";
-
-                if (snapshot != null && snapshot.exists() && source.equals("Server")) {
-                    Log.d(TAG, "Current data: " + snapshot.getData());
-                    sessionData = snapshot.getData();
-                } else {
-                    Log.d(TAG, "Current data: null");
-                }
-            }
-        });*/
     }
 
     public void switchContent(int id, Fragment fragment) {
@@ -510,13 +404,6 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
     @Override
     public void onSensorChanged(final SensorEvent event) {
         if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
-            /*
-            Map<String, Object> dataPoint = new HashMap<>();
-            dataPoint.put("time", System.nanoTime());
-            dataPoint.put("x", event.values[0]);
-            dataPoint.put("y", event.values[1]);
-            dataPoint.put("z", event.values[2]);
-            accelero_dataPoints.add(dataPoint);*/
             nodeClient.getConnectedNodes()
                     .addOnSuccessListener(new OnSuccessListener<List<Node>>() {
                         @Override
@@ -534,11 +421,6 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
                     });
             //TODO: heartbeat constant 0???
         } else if(event.sensor.getType() == Sensor.TYPE_HEART_BEAT){
-            /*
-            Map<String, Object> dataPoint = new HashMap<>();
-            dataPoint.put("time", System.nanoTime());
-            dataPoint.put("heart_rate", event.values[0]);
-            heart_rate_dataPoints.add(dataPoint);*/
             Log.d(TAG, event.values[0]+"");
             nodeClient.getConnectedNodes()
                     .addOnSuccessListener(new OnSuccessListener<List<Node>>() {

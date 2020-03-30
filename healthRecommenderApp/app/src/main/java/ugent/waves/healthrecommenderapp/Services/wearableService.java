@@ -13,9 +13,7 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -110,6 +108,7 @@ public class wearableService extends WearableListenerService {
         if(messageEvent.getPath().equalsIgnoreCase(START) ){
             session_accelerometer = new HashMap<>();
             session_accelerometer.put("time", new ArrayList<>());
+            session_accelerometer.put("time_delta", new ArrayList<>());
             session_accelerometer.put("x", new ArrayList<>());
             session_accelerometer.put("y", new ArrayList<>());
             session_accelerometer.put("z", new ArrayList<>());
@@ -124,9 +123,11 @@ public class wearableService extends WearableListenerService {
             FloatBuffer values = ByteBuffer.wrap(messageEvent.getData()).asFloatBuffer();
             final float[] dst = new float[values.capacity()];
             values.get(dst);
+
             if(session_accelerometer == null){
                 session_accelerometer = new HashMap<>();
                 session_accelerometer.put("time", new ArrayList<>());
+                session_accelerometer.put("time_delta", new ArrayList<>());
                 session_accelerometer.put("x", new ArrayList<>());
                 session_accelerometer.put("y", new ArrayList<>());
                 session_accelerometer.put("z", new ArrayList<>());
@@ -135,6 +136,17 @@ public class wearableService extends WearableListenerService {
             //dezelfde accelerometer waarde wordt kort na elkaar soms meerdere keren gesampled, dus kijken nr tijd werkt niet
             //TODO: check of door deleten van samples, samplingfreq wel nog ok is
             if(session_accelerometer.get("x").size() == 0 || session_accelerometer.get("x").get(session_accelerometer.get("x").size()-1) != dst[1]){
+                double delta;
+                if(session_accelerometer.get("x").size() == 0){
+                    delta = 0;
+                } else{
+                    delta = floatToTimeDouble(session_accelerometer.get("time").get(0), dst[0]);
+                }
+                try{
+                    session_accelerometer.get("time_delta").add((float)delta);
+                } catch(Exception e){
+                    e.printStackTrace();
+                }
                 session_accelerometer.get("time").add(dst[0]);
                 session_accelerometer.get("x").add(dst[1]);
                 session_accelerometer.get("y").add(dst[2]);
@@ -202,8 +214,8 @@ public class wearableService extends WearableListenerService {
         //activities
         for(int i = 0; i < trantitions.get("start").size(); i++){
             double met_score = processMETscore(trantitions.get("start").get(i), trantitions.get("end").get(i));
-            Long start = (long) floatToTimeDouble(trantitions.get("start").get(i));
-            Long end = (long) floatToTimeDouble(trantitions.get("end").get(i));
+            Long start = (long) Float.parseFloat(String.valueOf(trantitions.get("start").get(i)));
+            Long end = (long) Float.parseFloat(String.valueOf(trantitions.get("end").get(i)));
             int act = (int) Float.parseFloat(String.valueOf(trantitions.get("activity").get(i)));
 
             totalMets += met_score;
@@ -522,17 +534,13 @@ public class wearableService extends WearableListenerService {
     HELP FUNCTIONS
      */
 
-    //TODO: wrong date
-    private double floatToTimeDouble(Float time) {
-        Calendar cal = Calendar.getInstance();
-        Date date_start = new Date((long) time.floatValue());
-        cal.setTime(date_start);
-        int h = cal.get(Calendar.HOUR);
-        int m = cal.get(Calendar.MINUTE);
-        int s = cal.get(Calendar.SECOND);
+    //TODO: system.nanotime was time since epoch, nu rare waarden
+    //SECONDEN
+    private double floatToTimeDouble(float time1,float time2) {
+        //seconden
+        long timedelta_seconden = (long) (time2 - time1)/1000000000;
 
-        double total = h + (m/60) + (s/3600);
-        return total;
+        return timedelta_seconden;
     }
 
     private byte[] toPrimitives(Byte[] oBytes)
