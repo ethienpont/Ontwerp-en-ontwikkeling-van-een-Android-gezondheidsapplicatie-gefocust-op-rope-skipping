@@ -160,7 +160,8 @@ public class wearableService extends WearableListenerService {
             //TODO: lange delay
             try  {
                 //output = getActivityPredictions();
-                output = new float[]{(float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0};
+                getActivityPredictions();
+                //output = new float[]{(float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0, (float) 0.0};
                 trantitions = get_trantitions();
                 Log.d("hh", "tlukt");
                 calculateSessionData();
@@ -228,12 +229,17 @@ public class wearableService extends WearableListenerService {
         appDb.sessionDao().insertActivitiesForSession(s, activities);
     }
 
-    private float[] getActivityPredictions(){
+    private Object getActivityPredictions(){
         File sdcard = getExternalFilesDir(null);
-        Interpreter interpreter = new Interpreter(new File(sdcard != null ? sdcard.getAbsolutePath() : null, "rope_skipping_simple.tflite"));
+        Interpreter interpreter = new Interpreter(new File(sdcard != null ? sdcard.getAbsolutePath() : null, "converted_model2.tflite"));
         float[][][][] input = segmentation();
         //TODO: transform output naar enum
-        float[] out = new float[input.length*100];
+        /*
+        Map<Integer, Object> out = new HashMap<>();
+        for(int i=0; i<input.length; i++){
+            out.put(i, new Object());
+        }*/
+        Object out = new Object();
         //final ByteBuffer buffer = ByteBuffer.allocate(input.size()*input.get(0).size()*input.get(0).get(0).size()*4);
         //buffer.put(input);
         interpreter.run(input, out);
@@ -419,11 +425,15 @@ public class wearableService extends WearableListenerService {
     private float[][][][] segmentation(){
         int N_FEATURES = 3;
         int FRAME_SIZE = getSamplingFrequentie() * 1;
-        int HOP_SIZE = 1;
 
         List<float[][][]> frames = new ArrayList<>();
 
-        for( int i = 0; i < session_accelerometer.get("x").size() - FRAME_SIZE; i += HOP_SIZE){
+        for( int i = 0; i < session_accelerometer.get("x").size() - FRAME_SIZE; i += FRAME_SIZE){
+
+
+            //TODO: list to segment!!!
+
+
             float[][] x = float1DTo2D(Floattofloat(session_accelerometer.get("x").subList(i, i+FRAME_SIZE)));
             float[][] y = float1DTo2D(Floattofloat(session_accelerometer.get("y").subList(i, i+FRAME_SIZE)));
             float[][] z = float1DTo2D(Floattofloat(session_accelerometer.get("z").subList(i, i+FRAME_SIZE)));
@@ -440,6 +450,18 @@ public class wearableService extends WearableListenerService {
         //frames = np.asarray(frames).reshape(-1, frame_size, N_FEATURES)
 
         return floatListTofloat4D(frames);
+    }
+
+    private float[][] listTosegment(List<Float> x, List<Float> y, List<Float> z){
+        float[][] segment = new float[x.size()][3];
+        for(int i = 0; i < x.size(); i++){
+            float[] sample = new float[3];
+            sample[0] = x.get(i);
+            sample[1] = y.get(i);
+            sample[2] = z.get(i);
+            segment[i] = sample;
+        }
+        return segment;
     }
 
     /*
