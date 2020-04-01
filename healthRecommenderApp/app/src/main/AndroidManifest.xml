@@ -7,7 +7,6 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
     <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION" />
 
     <application
@@ -25,27 +24,54 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".HelpClasses.RecommendationActivity"></activity>
-        <receiver android:name=".Services.userActivityService"  android:exported="true">
+        <activity android:name=".HelpClasses.RecommendationActivity" />
+
+        <receiver
+            android:name=".Services.userActivityService"
+            android:exported="true">
             <intent-filter>
-                <action android:name="ACTIVITY_RECOGNITION"/>
+                <action android:name="ACTIVITY_RECOGNITION" />
             </intent-filter>
         </receiver>
+
         <service android:name=".Services.wearableService">
             <intent-filter>
+
                 <!-- listeners receive events that match the actioand data filters -->
                 <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />
                 <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
                 <action android:name="com.google.android.gms.wearable.MESSAGE_LISTENER" />
                 <action android:name="com.google.android.gms.wearable.CAPABILITY_CHANGED" />
                 <action android:name="com.google.android.gms.wearable.CHANNEL_EVENT" />
-                <data android:scheme="wear" android:host="*" android:pathPrefix="/ACCELEROMETER" />
-                <data android:scheme="wear" android:host="*" android:pathPrefix="/STOP" />
-                <data android:scheme="wear" android:host="*" android:pathPrefix="/START" />
 
-                <data android:scheme="wear" android:host="*" android:pathPrefix="/HEARTRATE" />
+                <data
+                    android:host="*"
+                    android:pathPrefix="/ACCELEROMETER"
+                    android:scheme="wear" />
+                <data
+                    android:host="*"
+                    android:pathPrefix="/STOP"
+                    android:scheme="wear" />
+                <data
+                    android:host="*"
+                    android:pathPrefix="/START"
+                    android:scheme="wear" />
+                <data
+                    android:host="*"
+                    android:pathPrefix="/HEARTRATE"
+                    android:scheme="wear" />
             </intent-filter>
         </service>
+
+        <activity
+            android:name=".RopeskippinghistoryactivityActivity"
+            android:label="@string/title_activity_ropeskippinghistoryactivity"
+            android:parentActivityName=".SessionHistoryActivity"
+            android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="ugent.waves.healthrecommenderapp.SessionHistoryActivity" />
+        </activity>
     </application>
 
 </manifest>

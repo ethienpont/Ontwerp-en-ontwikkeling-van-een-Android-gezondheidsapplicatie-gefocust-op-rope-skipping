@@ -23,7 +23,7 @@ public abstract class SessionDao {
     abstract void _insertAll(List<SessionActivity> activities);  //this could go in a PetDao instead...
 
     @Insert
-    public abstract void insertSession(Session session);
+    public abstract long insertSession(Session session);
 
     @Query("SELECT * FROM Session WHERE week > :week")
     public abstract Session[] getSessionsFromWeek(int week);

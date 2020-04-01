@@ -7,6 +7,7 @@ public enum JumpMoves {
     SIDE_SWING(2),
     FORWARD_180(3),
     CROSS_OVER(4),
+    MISTAKE(5),
     OTHER(-1);
 
     private int jumpIndex;

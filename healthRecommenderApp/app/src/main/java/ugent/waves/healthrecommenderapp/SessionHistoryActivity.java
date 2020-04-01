@@ -24,13 +24,8 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.fitness.Fitness;
 import com.google.android.gms.fitness.FitnessOptions;
-import com.google.android.gms.fitness.data.DataSet;
 import com.google.android.gms.fitness.data.DataType;
-import com.google.android.gms.fitness.data.Session;
-import com.google.android.gms.fitness.request.SessionReadRequest;
-import com.google.android.gms.fitness.result.SessionReadResponse;
 import com.google.android.gms.location.ActivityRecognition;
 import com.google.android.gms.location.ActivityTransition;
 import com.google.android.gms.location.ActivityTransitionRequest;
@@ -45,18 +40,14 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QuerySnapshot;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -66,11 +57,13 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import ugent.waves.healthrecommenderapp.HelpClasses.goalHandler;
+import ugent.waves.healthrecommenderapp.Persistance.ActivityDao;
 import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
 import ugent.waves.healthrecommenderapp.Persistance.Recommendation;
 import ugent.waves.healthrecommenderapp.Persistance.RecommendationDao;
+import ugent.waves.healthrecommenderapp.Persistance.Session;
+import ugent.waves.healthrecommenderapp.Persistance.SessionActivity;
 import ugent.waves.healthrecommenderapp.Persistance.SessionDao;
-import ugent.waves.healthrecommenderapp.Persistance.SessionWithActivities;
 import ugent.waves.healthrecommenderapp.Services.NotificationCallback;
 import ugent.waves.healthrecommenderapp.Services.userActivityService;
 import ugent.waves.healthrecommenderapp.dataclasses.SessionHistoryData;
@@ -281,46 +274,16 @@ public class SessionHistoryActivity extends AppCompatActivity implements Notific
     GET DATA
      */
 
-    private Task<QuerySnapshot> get_activity_data(String id){
-        //haal activities op
-        Task<QuerySnapshot>  t = db.collection("users")
-                .document("testUser")
-                .collection("sessions")
-                .document(id)
-                .collection("activities")
-                .get();
-                /*
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot a) {
-                        for(DocumentSnapshot activity : a.getDocuments()){
-                            float start = activity.get("start") == null ? 0 : Float.parseFloat(activity.get("start").toString());
-                            Date s = new Date((long) start);
-                            //TODO: float -> string -> long -> date gives wrong time
-                            Log.d("dd", s.toString());
-                        }
-                        showRecyclerView();
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.w("l", "Error writing document", e);
-                    }
-                });*/
-                return t;
-    }
-
     //TODO: activities leeg
     private void get_session_data(){
         try{
-            //List<SessionWithActivities> s =  appDb.sessionDao().getSessionsWithActivities();
-            List<SessionWithActivities> s = new SessionAsyncTask(this, appDb).execute().get();
+            Session[] s = new SessionAsyncTask(this, appDb).execute().get();
 
             String activity = "rope skipping";
             int imgId = getImage(activity);
-            for(SessionWithActivities sessionWithActivities: s){
-                SessionHistoryData s_recyclerview = new SessionHistoryData(activity, imgId, sessionWithActivities.session.getTurns(), sessionWithActivities.activities);
+            for(Session ses: s){
+                SessionActivity[] a = new ActivityAsyncTask(this, appDb, ses.getUid()).execute().get();
+                SessionHistoryData s_recyclerview = new SessionHistoryData(activity, imgId, ses.getTurns(), a);
                 data.add(s_recyclerview);
             }
             showRecyclerView();
@@ -385,6 +348,7 @@ public class SessionHistoryActivity extends AppCompatActivity implements Notific
     }
 
     private void initHistoryData() {
+        /*
         Calendar cal = Calendar.getInstance();
         Date now = new Date();
         cal.setTime(now);
@@ -431,7 +395,7 @@ public class SessionHistoryActivity extends AppCompatActivity implements Notific
                     @Override
                     public void onFailure(@NonNull Exception e) {
                     }
-                });
+                });*/
     }
 
     /*
@@ -612,8 +576,26 @@ public class SessionHistoryActivity extends AppCompatActivity implements Notific
                 });
     }
 
+    private static class ActivityAsyncTask extends AsyncTask<Void, Void, SessionActivity[]> {
+        //Prevent leak
+        private WeakReference<Activity> weakActivity;
+        private AppDatabase db;
+        private int id;
 
-    private static class SessionAsyncTask extends AsyncTask<Void, Void, List<SessionWithActivities>> {
+        public ActivityAsyncTask(Activity activity, AppDatabase db, int id) {
+            weakActivity = new WeakReference<>(activity);
+            this.db = db;
+            this.id = id;
+        }
+
+        @Override
+        protected SessionActivity[] doInBackground(Void... params) {
+            ActivityDao activityDao = db.activityDao();
+            return activityDao.getActivitiesForSession(id);
+        }
+    }
+
+    private static class SessionAsyncTask extends AsyncTask<Void, Void, ugent.waves.healthrecommenderapp.Persistance.Session[]> {
         //Prevent leak
         private WeakReference<Activity> weakActivity;
         private AppDatabase db;
@@ -624,26 +606,9 @@ public class SessionHistoryActivity extends AppCompatActivity implements Notific
         }
 
         @Override
-        protected List<SessionWithActivities> doInBackground(Void... params) {
+        protected ugent.waves.healthrecommenderapp.Persistance.Session[] doInBackground(Void... params) {
             SessionDao sessionDao = db.sessionDao();
-            return sessionDao.getSessionsWithActivities();
-        }
-
-        @Override
-        protected void onPostExecute(List<SessionWithActivities> agentsCount) {
-            /*
-            Activity activity = weakActivity.get();
-            if(activity == null) {
-                return;
-            }
-
-            if (agentsCount > 0) {
-                //2: If it already exists then prompt user
-                Toast.makeText(activity, "Agent already exists!", Toast.LENGTH_LONG).show();
-            } else {
-                Toast.makeText(activity, "Agent does not exist! Hurray :)", Toast.LENGTH_LONG).show();
-                activity.onBackPressed();
-            }*/
+            return sessionDao.loadAllSessions();
         }
     }
 

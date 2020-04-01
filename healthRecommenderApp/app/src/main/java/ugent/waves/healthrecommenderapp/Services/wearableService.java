@@ -1,5 +1,7 @@
 package ugent.waves.healthrecommenderapp.Services;
 
+import android.util.Log;
+
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.WearableListenerService;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -17,7 +19,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import androidx.annotation.NonNull;
@@ -42,9 +43,9 @@ import ugent.waves.healthrecommenderapp.healthRecommenderApplication;
  */
 //TODO: structurize
 public class wearableService extends WearableListenerService {
-    //TODO: save sessions to room db??
 
     private List<JumpMoves> output;
+    private List<Float> mistakes;
 
     //"start", "end", "activity"
     private Map<String, List<Float>> trantitions;
@@ -96,7 +97,7 @@ public class wearableService extends WearableListenerService {
         filters = new HashMap<>();
         filters.put(JumpMoves.SLOW, new SavGolFilter(0, 51, 3));
         filters.put(JumpMoves.FAST, new SavGolFilter(0, 33, 5));
-        filters.put(JumpMoves.SIDE_SWING, new SavGolFilter(0, 51, 3));
+        filters.put(JumpMoves.SIDE_SWING, new SavGolFilter(0, 101, 5));
         filters.put(JumpMoves.CROSS_OVER, new SavGolFilter(0, 41, 3));
         filters.put(JumpMoves.FORWARD_180, new SavGolFilter(0, 51, 3));
 
@@ -172,6 +173,7 @@ public class wearableService extends WearableListenerService {
         }
         else if(messageEvent.getPath().equalsIgnoreCase(STOP)){
             try  {
+                normalization();
                 output = getActivityPredictions();
                 trantitions = get_trantitions();
                 calculateSessionData();
@@ -183,32 +185,13 @@ public class wearableService extends WearableListenerService {
     }
 
     private void calculateSessionData(){
-        //mets + turns + weeknumber
-        Map<String, String> session_calc = new HashMap<>();
-        String id = UUID.randomUUID().toString();
         int turns = numberTurns();
-        //double met_score = processMETscore();
         int week = app.getWeeknr();
-        //TODO: mets moet int zijn
-        //session_calc.put("met_score", met_score+"");
-        session_calc.put("turns", turns+"");
-        //TODO: week moet int zijn
-        session_calc.put("week", week+"");
         //TODO: mistakes in room
-        List<Float> mistakes = mistakesTimestamps();
+        List<Float> mistakes = mistakes_ML();
 
         s.setWeek(app.getWeeknr());
         s.setTurns(turns);
-
-        //post_data(session_calc, null, id);
-
-        /*
-        //mistakes
-        for (int i=0; i < mistakes.size(); i++){
-            Map<String, String> mis = new HashMap<>();
-            mis.put("time", mistakes.get(i)+"");
-            post_data(mis, "mistakes", id);
-        }*/
 
         double totalMets = 0;
         //activities
@@ -231,11 +214,15 @@ public class wearableService extends WearableListenerService {
             //post_data(d, "activities", id);
         }
         s.setMets(totalMets);
-        //appDb.sessionDao().insertActivitiesForSession(s ,activities);
-        appDb.sessionDao().insertSession(s);
-        appDb.sessionDao().insertActivitiesForSession(s, activities);
+        long id = appDb.sessionDao().insertSession(s);
+        for(SessionActivity a: activities){
+            a.setSessionId((int) id);
+            appDb.activityDao().insertActivity(a);
+        }
+        //appDb.sessionDao().insertActivitiesForSession(s, activities);
     }
 
+    //TODO: crash als minder dan 1 sec sessie
     private List<JumpMoves> getActivityPredictions(){
         File sdcard = getExternalFilesDir(null);
         Interpreter interpreter = new Interpreter(new File(sdcard != null ? sdcard.getAbsolutePath() : null, "converted_model2.tflite"));
@@ -275,14 +262,14 @@ public class wearableService extends WearableListenerService {
         return probabilities;
     }
 
-
     /*
     SESSION CALCULATIONS
      */
 
+    //TODO: met afgeleide
     //TODO: alle assen bekijken en hier overlapping van nemen
     //als data in alle assen bijna 0 is voor bepaalde duur = mistake
-    private List<Float> mistakesTimestamps(){
+    private List<Float> mistakesTimestamps_deravative(){
         List<Float> mistakes = new ArrayList<>();
         double interval_high = 0.5;
         double interval_low = -0.5;
@@ -308,6 +295,18 @@ public class wearableService extends WearableListenerService {
         return mistakes;
     }
 
+    private List<Float> mistakes_ML(){
+        List<Float> mistakes = new ArrayList<>();
+        for(int i = 0; i < trantitions.get("start").size(); i++){
+            JumpMoves m = JumpMoves.getJump((int)Float.parseFloat(String.valueOf(trantitions.get("activity").get(i))));
+            float time_delta = trantitions.get("end").get(i) - trantitions.get("start").get(i);
+            if(m == JumpMoves.MISTAKE && time_delta > 1){
+                mistakes.add(trantitions.get("start").get(i));
+            }
+        }
+        return mistakes;
+    }
+
     private int localMaxima(float a[])
     {
         int count = 0;
@@ -320,6 +319,7 @@ public class wearableService extends WearableListenerService {
         return count;
     }
 
+    //TODO: soms negatieve indexen???
     //TODO: finetunen
     private int numberTurns(){
         //TODO: put in different place
@@ -327,7 +327,7 @@ public class wearableService extends WearableListenerService {
         iterations.put(JumpMoves.SLOW, 3);
         iterations.put(JumpMoves.FAST, 5);
         iterations.put(JumpMoves.CROSS_OVER, 2);
-        iterations.put(JumpMoves.SIDE_SWING, 2);
+        iterations.put(JumpMoves.SIDE_SWING, 5);
         iterations.put(JumpMoves.FORWARD_180, 2);
 
         Map<JumpMoves, Integer> turns = new HashMap<>();
@@ -344,11 +344,13 @@ public class wearableService extends WearableListenerService {
         //voor elke activiteit bereken draaiingen
         for(int i = 0; i < trantitions.get("start").size(); i++){
             int act = (int) Float.parseFloat(String.valueOf(trantitions.get("activity").get(i)));
+            int s = session_accelerometer.get("time_delta").indexOf(trantitions.get("start").get(i));
+            int e = session_accelerometer.get("time_delta").indexOf(trantitions.get("end").get(i));
             SavGolFilter f = filters.get(JumpMoves.getJump(act));
 
-            x_savgol = f.filterData(Floattofloat(session_accelerometer.get("x")));
-            y_savgol = f.filterData(Floattofloat(session_accelerometer.get("y")));
-            z_savgol = f.filterData(Floattofloat(session_accelerometer.get("z")));
+            x_savgol = f.filterData(Floattofloat(session_accelerometer.get("x").subList(s, e)));
+            y_savgol = f.filterData(Floattofloat(session_accelerometer.get("y").subList(s, e)));
+            z_savgol = f.filterData(Floattofloat(session_accelerometer.get("z").subList(s, e)));
 
             for(int j = 0; j < iterations.get(JumpMoves.getJump(act))-1; j++){
                 x_savgol = f.filterData(x_savgol);
@@ -370,8 +372,7 @@ public class wearableService extends WearableListenerService {
         return sum_turns;
     }
 
-    //TODO: tijdstippen bekijken
-    //TODO: MET per activiteit
+    //TODO: hartslag in lagere zones ook meerekenen? + formule herzien
     //TODO: wat als geen heartdata
     private double processMETscore(Float start, Float end){
         List<Float> heartRateFiltered = session_heartbeat.get("HR").stream()
@@ -422,8 +423,23 @@ public class wearableService extends WearableListenerService {
      */
 
     //TODO
+    //normalizeren in scikit: zorgen dat unit norm van de vector 1 is
+    //dus delen door unit norm?
     private void normalization(){
-        //for( int i = 0; i < session.get("x").size(); i++){}
+        float x, y, z;
+        double squared_sum, norm, checksum;
+        for( int i = 0; i < session_accelerometer.get("x").size(); i++){
+            x = session_accelerometer.get("x").get(i);
+            y = session_accelerometer.get("y").get(i);
+            z = session_accelerometer.get("z").get(i);
+            squared_sum = Double.parseDouble(Float.toString((x*x) + (y*y) + (z*z)));
+            norm = Math.sqrt(squared_sum);
+            session_accelerometer.get("x").set(i, Float.parseFloat(Double.toString(x/norm)));
+            session_accelerometer.get("y").set(i, Float.parseFloat(Double.toString(y/norm)));
+            session_accelerometer.get("z").set(i, Float.parseFloat(Double.toString(z/norm)));
+            checksum = Math.sqrt((x/norm)*(x/norm) + (y/norm)*(y/norm) + (z/norm)*(z/norm));
+            Log.d("d", "d");
+        }
     }
 
     //TODO: sampling mss in realtime schatten?
@@ -489,8 +505,8 @@ public class wearableService extends WearableListenerService {
         float end, start;
         if(indexes.size() == 1){
             int numberSensorSamples = (output.size())*FRAME_SIZE; //TODO: drop partial frames
-            start = session_accelerometer.get("time").get(0);
-            end = session_accelerometer.get("time").get(numberSensorSamples);
+            start = session_accelerometer.get("time_delta").get(0);
+            end = session_accelerometer.get("time_delta").get(numberSensorSamples);
             trantitions_.get("start").add(start);
             trantitions_.get("end").add(end);
             trantitions_.get("activity").add((float) t.get(0).getValue());
@@ -498,8 +514,8 @@ public class wearableService extends WearableListenerService {
             int indexTime = 0;
             for (int i = 0; i<indexes.size()-1; i++) {
                 int numberSensorSamples = (indexes.get(i + 1) - indexes.get(i))*FRAME_SIZE;
-                start = session_accelerometer.get("time").get(indexTime);
-                end = session_accelerometer.get("time").get(indexTime+numberSensorSamples);
+                start = session_accelerometer.get("time_delta").get(indexTime);
+                end = session_accelerometer.get("time_delta").get(indexTime+numberSensorSamples);
                 trantitions_.get("start").add(start);
                 trantitions_.get("end").add(end);
                 trantitions_.get("activity").add((float) t.get(i).getValue());
