@@ -63,15 +63,6 @@
             </intent-filter>
         </service>
 
-        <activity
-            android:name=".RopeskippinghistoryactivityActivity"
-            android:label="@string/title_activity_ropeskippinghistoryactivity"
-            android:parentActivityName=".SessionHistoryActivity"
-            android:theme="@style/AppTheme.NoActionBar">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="ugent.waves.healthrecommenderapp.SessionHistoryActivity" />
-        </activity>
     </application>
 
 </manifest>

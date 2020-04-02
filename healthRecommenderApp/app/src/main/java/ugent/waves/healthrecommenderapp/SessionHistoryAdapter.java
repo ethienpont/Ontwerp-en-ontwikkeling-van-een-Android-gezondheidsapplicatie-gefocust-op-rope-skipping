@@ -31,11 +31,11 @@ public class SessionHistoryAdapter extends Adapter<SessionHistoryAdapter.Session
         public RelativeLayout relativeLayout;
         public SessionViewHolder(View itemView) {
             super(itemView);
-            this.imageView = (ImageView) itemView.findViewById(R.id.imageView);
+            this.imageView = (ImageView) itemView.findViewById(R.id.thumbnail);
             this.activity = (TextView) itemView.findViewById(R.id.activity);
-            this.startTime = (TextView) itemView.findViewById(R.id.startTime);
-            this.endTime = (TextView) itemView.findViewById(R.id.endTime);
-            relativeLayout = (RelativeLayout)itemView.findViewById(R.id.relativeLayout);
+            this.startTime = (TextView) itemView.findViewById(R.id.start);
+            this.endTime = (TextView) itemView.findViewById(R.id.end);
+            relativeLayout = (RelativeLayout)itemView.findViewById(R.id.layout);
         }
     }
 

@@ -57,13 +57,9 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import ugent.waves.healthrecommenderapp.HelpClasses.goalHandler;
-import ugent.waves.healthrecommenderapp.Persistance.ActivityDao;
 import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
 import ugent.waves.healthrecommenderapp.Persistance.Recommendation;
 import ugent.waves.healthrecommenderapp.Persistance.RecommendationDao;
-import ugent.waves.healthrecommenderapp.Persistance.Session;
-import ugent.waves.healthrecommenderapp.Persistance.SessionActivity;
-import ugent.waves.healthrecommenderapp.Persistance.SessionDao;
 import ugent.waves.healthrecommenderapp.Services.NotificationCallback;
 import ugent.waves.healthrecommenderapp.Services.userActivityService;
 import ugent.waves.healthrecommenderapp.dataclasses.SessionHistoryData;
@@ -189,7 +185,8 @@ public class SessionHistoryActivity extends AppCompatActivity implements Notific
             //initialize firestore db
             db = app.getFirestore();
 
-            get_session_data();
+            //get_session_data();
+            showRecyclerView();
 
             goalHandler g = new goalHandler(null, this, app);
             //g.generateRecommendations();
@@ -250,19 +247,6 @@ public class SessionHistoryActivity extends AppCompatActivity implements Notific
         switchContent(R.id.container, fr);
     }
 
-    private int getImage(String activity) {
-        if(activity.equals("running")){
-            return R.drawable.running;
-        } else if(activity.equals("biking")){
-            return R.drawable.biking;
-        } else if(activity.equals("badminton")){
-            return R.drawable.badminton;
-        } else if(activity.equals("rope skipping")){
-            return R.drawable.rope_skipping;
-        }
-        return R.drawable.other;
-    }
-
     public void switchContent(int id, Fragment fragment) {
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         ft.replace(id, fragment, fragment.toString());
@@ -270,28 +254,6 @@ public class SessionHistoryActivity extends AppCompatActivity implements Notific
         ft.commit();
     }
 
-    /*
-    GET DATA
-     */
-
-    //TODO: activities leeg
-    private void get_session_data(){
-        try{
-            Session[] s = new SessionAsyncTask(this, appDb).execute().get();
-
-            String activity = "rope skipping";
-            int imgId = getImage(activity);
-            for(Session ses: s){
-                SessionActivity[] a = new ActivityAsyncTask(this, appDb, ses.getUid()).execute().get();
-                SessionHistoryData s_recyclerview = new SessionHistoryData(activity, imgId, ses.getTurns(), a);
-                data.add(s_recyclerview);
-            }
-            showRecyclerView();
-            Log.e(TAG, "ok");
-        } catch(Exception e){
-            Log.e(TAG, e.getMessage());
-        }
-    }
 
         /*
     RECOMMENDATION NOTIFICATION
@@ -576,41 +538,6 @@ public class SessionHistoryActivity extends AppCompatActivity implements Notific
                 });
     }
 
-    private static class ActivityAsyncTask extends AsyncTask<Void, Void, SessionActivity[]> {
-        //Prevent leak
-        private WeakReference<Activity> weakActivity;
-        private AppDatabase db;
-        private int id;
-
-        public ActivityAsyncTask(Activity activity, AppDatabase db, int id) {
-            weakActivity = new WeakReference<>(activity);
-            this.db = db;
-            this.id = id;
-        }
-
-        @Override
-        protected SessionActivity[] doInBackground(Void... params) {
-            ActivityDao activityDao = db.activityDao();
-            return activityDao.getActivitiesForSession(id);
-        }
-    }
-
-    private static class SessionAsyncTask extends AsyncTask<Void, Void, ugent.waves.healthrecommenderapp.Persistance.Session[]> {
-        //Prevent leak
-        private WeakReference<Activity> weakActivity;
-        private AppDatabase db;
-
-        public SessionAsyncTask(Activity activity, AppDatabase db) {
-            weakActivity = new WeakReference<>(activity);
-            this.db = db;
-        }
-
-        @Override
-        protected ugent.waves.healthrecommenderapp.Persistance.Session[] doInBackground(Void... params) {
-            SessionDao sessionDao = db.sessionDao();
-            return sessionDao.loadAllSessions();
-        }
-    }
 
     private static class RecommendationAsyncTask extends AsyncTask<Void, Void, Recommendation> {
         //Prevent leak
