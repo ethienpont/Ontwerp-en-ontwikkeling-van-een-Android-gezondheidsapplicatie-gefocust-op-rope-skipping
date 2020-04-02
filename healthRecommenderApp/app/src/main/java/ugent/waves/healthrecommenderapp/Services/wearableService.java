@@ -25,6 +25,7 @@ import androidx.annotation.NonNull;
 import ugent.waves.healthrecommenderapp.Enums.JumpMoves;
 import ugent.waves.healthrecommenderapp.HelpClasses.SavGolFilter;
 import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
+import ugent.waves.healthrecommenderapp.Persistance.Mistake;
 import ugent.waves.healthrecommenderapp.Persistance.Session;
 import ugent.waves.healthrecommenderapp.Persistance.SessionActivity;
 import ugent.waves.healthrecommenderapp.healthRecommenderApplication;
@@ -188,7 +189,7 @@ public class wearableService extends WearableListenerService {
         int turns = numberTurns();
         int week = app.getWeeknr();
         //TODO: mistakes in room
-        List<Float> mistakes = mistakes_ML();
+        List<Mistake> m = mistakes_ML();
 
         s.setWeek(app.getWeeknr());
         s.setTurns(turns);
@@ -203,15 +204,16 @@ public class wearableService extends WearableListenerService {
 
             totalMets += met_score;
 
-            SessionActivity a = new SessionActivity();
-            a.setEnd(end);
-            a.setStart(start);
-            a.setMET_score(met_score);
-            a.setActivity(act);
+            //mistakes are processed in another way
+            if(JumpMoves.getJump(act) != JumpMoves.MISTAKE){
+                SessionActivity a = new SessionActivity();
+                a.setEnd(end);
+                a.setStart(start);
+                a.setMET_score(met_score);
+                a.setActivity(act);
 
-            activities.add(a);
-
-            //post_data(d, "activities", id);
+                activities.add(a);
+            }
         }
         s.setMets(totalMets);
         long id = appDb.sessionDao().insertSession(s);
@@ -219,7 +221,11 @@ public class wearableService extends WearableListenerService {
             a.setSessionId((int) id);
             appDb.activityDao().insertActivity(a);
         }
-        //appDb.sessionDao().insertActivitiesForSession(s, activities);
+        for(Mistake mk: m){
+            mk.setSessionId((int) id);
+            appDb.mistakeDao().insertMistake(mk);
+        }
+
     }
 
     //TODO: crash als minder dan 1 sec sessie
@@ -295,13 +301,20 @@ public class wearableService extends WearableListenerService {
         return mistakes;
     }
 
-    private List<Float> mistakes_ML(){
-        List<Float> mistakes = new ArrayList<>();
-        for(int i = 0; i < trantitions.get("start").size(); i++){
+    private List<Mistake> mistakes_ML(){
+        //timestamp mistake + move that causes it
+        List<Mistake> mistakes = new ArrayList<>();
+        for(int i = 1; i < trantitions.get("start").size(); i++){
             JumpMoves m = JumpMoves.getJump((int)Float.parseFloat(String.valueOf(trantitions.get("activity").get(i))));
             float time_delta = trantitions.get("end").get(i) - trantitions.get("start").get(i);
+
+            //ASSUME jump before causes mistake
+            //TODO: kan niet hier inserten want sessionid nog niet geweten
             if(m == JumpMoves.MISTAKE && time_delta > 1){
-                mistakes.add(trantitions.get("start").get(i));
+                Mistake mis = new Mistake();
+                mis.setActivity((int) Float.parseFloat(String.valueOf(trantitions.get("activity").get(i-1))));
+                mis.setTime((int) Float.parseFloat(String.valueOf(trantitions.get("start").get(i))));
+                mistakes.add(mis);
             }
         }
         return mistakes;

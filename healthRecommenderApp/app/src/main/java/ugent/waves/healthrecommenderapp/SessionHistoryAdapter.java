@@ -26,15 +26,15 @@ public class SessionHistoryAdapter extends Adapter<SessionHistoryAdapter.Session
     public static class SessionViewHolder extends ViewHolder{
         public ImageView imageView;
         public TextView activity;
-        public TextView startTime;
-        public TextView endTime;
+        public TextView turns;
+        public TextView mets;
         public RelativeLayout relativeLayout;
         public SessionViewHolder(View itemView) {
             super(itemView);
             this.imageView = (ImageView) itemView.findViewById(R.id.thumbnail);
             this.activity = (TextView) itemView.findViewById(R.id.activity);
-            this.startTime = (TextView) itemView.findViewById(R.id.start);
-            this.endTime = (TextView) itemView.findViewById(R.id.end);
+            this.turns = (TextView) itemView.findViewById(R.id.turns);
+            this.mets = (TextView) itemView.findViewById(R.id.points);
             relativeLayout = (RelativeLayout)itemView.findViewById(R.id.layout);
         }
     }
@@ -57,6 +57,8 @@ public class SessionHistoryAdapter extends Adapter<SessionHistoryAdapter.Session
     // Replace the contents of a view (invoked by the layout manager)
     @Override
     public void onBindViewHolder(SessionViewHolder holder, final int position) {
+        holder.turns.setText(mDataset.get(position).getTurns() + " turns");
+        holder.mets.setText(mDataset.get(position).getMets_points() + " points");
         holder.activity.setText(mDataset.get(position).getDescription());
         holder.imageView.setImageResource(mDataset.get(position).getImgId());
         holder.relativeLayout.setOnClickListener(new View.OnClickListener() {
@@ -69,7 +71,7 @@ public class SessionHistoryAdapter extends Adapter<SessionHistoryAdapter.Session
     }
 
     private void fragmentJump(SessionHistoryData mItemSelected) {
-        mFragment = SessionHistoryFragment.newInstance(mItemSelected);
+        mFragment = SessionHistoryFragment.newInstance(mItemSelected.getSessionId());
         switchContent(R.id.container, mFragment);
     }
 

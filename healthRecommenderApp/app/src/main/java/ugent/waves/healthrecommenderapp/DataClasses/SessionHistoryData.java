@@ -1,26 +1,22 @@
 package ugent.waves.healthrecommenderapp.dataclasses;
 
-import android.os.Parcel;
-import android.os.Parcelable;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import ugent.waves.healthrecommenderapp.Persistance.SessionActivity;
-
-public class SessionHistoryData implements Parcelable {
+public class SessionHistoryData {
     private String description;
     private int imgId;
     private String turns;
     private String mets_points;
-    private SessionActivity[] activities;
+    private int sessionId;
 
 
-    public SessionHistoryData(String activity, int imgId, int turns, SessionActivity[] activities) {
+    public SessionHistoryData(String activity, int imgId, int turns, double mets, int s) {
         this.description = activity;
         this.imgId = imgId;
         this.turns = turns+"";
-        this.activities = activities;
+        this.sessionId = s;
+        this.mets_points = mets + "";
     }
 
     public String getDescription() {
@@ -36,38 +32,6 @@ public class SessionHistoryData implements Parcelable {
         this.imgId = imgId;
     }
 
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeString(this.description);
-        dest.writeInt(this.imgId);
-        dest.writeTypedArray(this.activities, this.activities.length);
-        dest.writeString(this.turns);
-        dest.writeString(this.mets_points);
-    }
-
-    public static final Parcelable.Creator<SessionHistoryData> CREATOR
-            = new Parcelable.Creator<SessionHistoryData>() {
-        public SessionHistoryData createFromParcel(Parcel in) {
-            return new SessionHistoryData(in);
-        }
-
-        public SessionHistoryData[] newArray(int size) {
-            return new SessionHistoryData[size];
-        }
-    };
-
-    private SessionHistoryData(Parcel in) {
-        this.description = in.readString();
-        this.imgId = in.readInt();
-        in.readTypedArray(this.activities, SessionActivity.CREATOR);
-        this.turns = in.readString();
-        this.mets_points = in.readString();
-    }
 
     public String getTurns() {
         return turns;
@@ -89,5 +53,13 @@ public class SessionHistoryData implements Parcelable {
 
         SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm");
         return formatter.format(d);
+    }
+
+    public int getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(int sessionId) {
+        this.sessionId = sessionId;
     }
 }
