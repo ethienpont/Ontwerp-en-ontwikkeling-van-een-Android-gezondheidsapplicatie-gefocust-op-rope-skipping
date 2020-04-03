@@ -18,7 +18,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity android:name=".SessionHistoryActivity"></activity>
-        <activity android:name=".HelpClasses.RecommendationActivity" />
+        <activity android:name=".Recommendation.RecommendationActivity" />
 
         <receiver
             android:name=".Services.userActivityService"

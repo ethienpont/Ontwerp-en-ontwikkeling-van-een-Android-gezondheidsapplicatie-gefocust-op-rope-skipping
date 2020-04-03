@@ -2,10 +2,8 @@ package ugent.waves.healthrecommenderapp;
 
 import android.app.Application;
 
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.firebase.firestore.FirebaseFirestore;
-
-import java.util.Calendar;
-import java.util.Date;
 
 import androidx.room.Room;
 import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
@@ -24,27 +22,7 @@ public class healthRecommenderApplication extends Application {
 
     private int rank;
 
-    public Long getNowMilliSec(Calendar cal){
-        Date now = new Date();
-        /*
-        cal.setTime(now);
-        cal.set(Calendar.HOUR_OF_DAY, 23);
-        cal.set(Calendar.MINUTE, 59);
-        cal.set(Calendar.SECOND, 59);
-        cal.set(Calendar.MILLISECOND, 999);
-        Log.e("a", cal.getTime().toString());*/
-        return cal.getTimeInMillis();
-    }
-
-    public Long getWeeksAgoMilliSec(Calendar cal, int week){
-        cal.add(Calendar.WEEK_OF_YEAR, -1*week);
-        /*
-        cal.set(Calendar.HOUR_OF_DAY, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);*/
-        return cal.getTimeInMillis();
-    }
+    private GoogleSignInAccount account;
 
     public int getWeeknr() {
         return weeknr;
@@ -101,5 +79,13 @@ public class healthRecommenderApplication extends Application {
 
     public void setRank(int rank) {
         this.rank = rank;
+    }
+
+    public GoogleSignInAccount getAccount() {
+        return account;
+    }
+
+    public void setAccount(GoogleSignInAccount account) {
+        this.account = account;
     }
 }

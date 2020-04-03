@@ -40,14 +40,13 @@ public class LoginActivity extends Activity implements View.OnClickListener {
     private static final int PERMISSION_REQUEST = 2;
     private static final int GOOGLE_FIT_PERMISSIONS_REQUEST_CODE = 3;
 
-    //google sign in
-    private GoogleSignInAccount account;
 
     //firebase
     private FirebaseFirestore db;
     private FirebaseUser user;
     private FirebaseAuth mAuth;
     private GoogleSignInClient mGoogleSignInClient;
+    private GoogleSignInAccount account;
 
 
     @Override
@@ -68,13 +67,13 @@ public class LoginActivity extends Activity implements View.OnClickListener {
         account = GoogleSignIn.getLastSignedInAccount(this);
         findViewById(R.id.sign_in_button).setOnClickListener(this);
 
-        /*
         if(account != null){
             accessApp();
-        }*/
+        }
     }
 
     private void accessApp(){
+        app.setAccount(account);
         Intent intent = new Intent(this, NavigationActivity.class);
         startActivity(intent);
     }

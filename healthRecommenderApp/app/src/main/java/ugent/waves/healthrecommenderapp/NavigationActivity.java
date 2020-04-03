@@ -15,6 +15,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.google.android.gms.location.ActivityRecognition;
 import com.google.android.gms.location.ActivityTransition;
@@ -22,6 +24,7 @@ import com.google.android.gms.location.ActivityTransitionRequest;
 import com.google.android.gms.location.DetectedActivity;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.navigation.NavigationView;
+import com.squareup.picasso.Picasso;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -36,10 +39,10 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
-import ugent.waves.healthrecommenderapp.HelpClasses.RecommendationActivity;
 import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
 import ugent.waves.healthrecommenderapp.Persistance.Recommendation;
 import ugent.waves.healthrecommenderapp.Persistance.RecommendationDao;
+import ugent.waves.healthrecommenderapp.Recommendation.RecommendationListFragment;
 import ugent.waves.healthrecommenderapp.Services.NotificationCallback;
 import ugent.waves.healthrecommenderapp.Services.userActivityService;
 import ugent.waves.healthrecommenderapp.dataclasses.SessionHistoryData;
@@ -84,6 +87,15 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
 
         setupDrawerContent(nvDrawer);
 
+        drawerToggle = new ActionBarDrawerToggle(this, mDrawer, toolbar, R.string.drawer_open,  R.string.drawer_close);
+        // Setup toggle to display hamburger icon with nice animation
+        drawerToggle.setDrawerIndicatorEnabled(true);
+        drawerToggle.syncState();
+
+        // Tie DrawerLayout events to the ActionBarToggle
+        mDrawer.addDrawerListener(drawerToggle);
+
+
         /*
         APP INITIALISATION
          */
@@ -101,7 +113,18 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
         app = (healthRecommenderApplication) this.getApplicationContext();
         appDb = app.getAppDb();
 
+        if (nvDrawer.getHeaderCount() > 0) {
+            TextView mName = (TextView) nvDrawer.getHeaderView(0).findViewById(R.id.email);
+            ImageView mImageView = (ImageView) nvDrawer.getHeaderView(0).findViewById(R.id.circleImage);
+
+            mName.setText(app.getAccount().getEmail());
+            Picasso.get().load(app.getAccount().getPhotoUrl()).into(mImageView);
+        }
+
         registerReceiver(broadcastReceiver, new IntentFilter("SEND_NOTIFICATION"));
+
+        //goalHandler g = new goalHandler(null, this, app);
+        //g.generateRecommendations();
 
     }
 
@@ -138,7 +161,7 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
                 fragmentClass = SessionHistoryListFragment.class;
                 break;
             case R.id.recommendation:
-                fragmentClass = RecommendationActivity.class;
+                fragmentClass = RecommendationListFragment.class;
                 break;
             default:
                 fragmentClass = SessionHistoryListFragment.class;

@@ -5,10 +5,12 @@
     <item
         android:id="@+id/history"
         android:title="history"
+        android:icon="@drawable/rope_skipping"
         app:showAsAction="withText|ifRoom" />
     <item
         android:id="@+id/recommendation"
         android:orderInCategory="100"
         android:title="recommendations"
+        android:icon="@drawable/other"
         app:showAsAction="never" />
 </menu>
