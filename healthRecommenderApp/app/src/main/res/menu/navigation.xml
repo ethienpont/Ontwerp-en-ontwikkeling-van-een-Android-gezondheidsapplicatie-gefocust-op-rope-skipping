@@ -1,0 +1,14 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="ugent.waves.healthrecommenderapp.NavigationActivity">
+    <item
+        android:id="@+id/history"
+        android:title="history"
+        app:showAsAction="withText|ifRoom" />
+    <item
+        android:id="@+id/recommendation"
+        android:orderInCategory="100"
+        android:title="recommendations"
+        app:showAsAction="never" />
+</menu>

@@ -1,4 +1,4 @@
-package ugent.waves.healthrecommenderapp;
+package ugent.waves.healthrecommenderapp.sessionHistory;
 
 import android.app.Activity;
 import android.os.AsyncTask;
@@ -17,7 +17,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
 import ugent.waves.healthrecommenderapp.Persistance.Session;
 import ugent.waves.healthrecommenderapp.Persistance.SessionDao;
+import ugent.waves.healthrecommenderapp.R;
 import ugent.waves.healthrecommenderapp.dataclasses.SessionHistoryData;
+import ugent.waves.healthrecommenderapp.healthRecommenderApplication;
 
 public class SessionHistoryListFragment extends Fragment {
 

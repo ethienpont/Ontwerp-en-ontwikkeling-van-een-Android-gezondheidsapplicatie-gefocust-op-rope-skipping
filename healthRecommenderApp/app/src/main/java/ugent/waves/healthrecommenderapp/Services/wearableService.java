@@ -185,10 +185,10 @@ public class wearableService extends WearableListenerService {
         }
     }
 
+    //TODO: checken of sessie genoeg data bevat
     private void calculateSessionData(){
         int turns = numberTurns();
         int week = app.getWeeknr();
-        //TODO: mistakes in room
         List<Mistake> m = mistakes_ML();
 
         s.setWeek(app.getWeeknr());

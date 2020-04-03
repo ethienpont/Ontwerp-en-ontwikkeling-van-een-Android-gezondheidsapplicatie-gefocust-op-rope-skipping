@@ -1,17 +1,31 @@
 package ugent.waves.healthrecommenderapp.HelpClasses;
 
-import androidx.appcompat.app.AppCompatActivity;
-import ugent.waves.healthrecommenderapp.R;
-
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 
-public class RecommendationActivity extends AppCompatActivity {
+import androidx.fragment.app.Fragment;
+import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
+import ugent.waves.healthrecommenderapp.R;
+import ugent.waves.healthrecommenderapp.healthRecommenderApplication;
+
+public class RecommendationActivity extends Fragment {
+
+    private healthRecommenderApplication app;
+
+    private AppDatabase appDb;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_recommendation);
-    }
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        app = (healthRecommenderApplication) getContext().getApplicationContext();
 
+        appDb = app.getAppDb();
+
+        View view = inflater.inflate(R.layout.activity_recommendation, container, false);
+
+        return view;
+
+    }
 
 }

@@ -1,4 +1,4 @@
-package ugent.waves.healthrecommenderapp;
+package ugent.waves.healthrecommenderapp.sessionHistory;
 
 import android.app.Activity;
 import android.os.AsyncTask;
@@ -10,14 +10,14 @@ import android.view.ViewGroup;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.ExecutionException;
 
-import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
 import ugent.waves.healthrecommenderapp.Persistance.ActivityDao;
 import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
 import ugent.waves.healthrecommenderapp.Persistance.Mistake;
 import ugent.waves.healthrecommenderapp.Persistance.MistakeDao;
 import ugent.waves.healthrecommenderapp.Persistance.SessionActivity;
-import ugent.waves.healthrecommenderapp.databinding.SessionHistoryFragmentBinding;
+import ugent.waves.healthrecommenderapp.R;
+import ugent.waves.healthrecommenderapp.healthRecommenderApplication;
 
 public class SessionHistoryFragment extends Fragment {
 
@@ -26,6 +26,12 @@ public class SessionHistoryFragment extends Fragment {
         <variable name="sessionData" type="ugent.waves.healthrecommenderapp.dataclasses.SessionHistoryData"/>
         <import type="android.view.View"/>
     </data>
+
+    <Layout>
+
+    dataBinding {
+        enabled = true
+    }
      */
 
     private static final String ARG_DATA = "sessionId";
@@ -45,9 +51,12 @@ public class SessionHistoryFragment extends Fragment {
 
         getSessionActivities();
         // Inflate the layout for this fragment
-        SessionHistoryFragmentBinding binding = DataBindingUtil.inflate(inflater, R.layout.session_history_fragment, container, false);
-        View view = binding.getRoot();
+        //SessionHistoryFragmentBinding binding = DataBindingUtil.inflate(inflater, R.layout.session_history_fragment, container, false);
+        //View view = binding.getRoot();
         //binding.setSessionData(data);
+
+        View view = inflater.inflate(R.layout.session_history_fragment, container, false);
+
         return view;
 
     }

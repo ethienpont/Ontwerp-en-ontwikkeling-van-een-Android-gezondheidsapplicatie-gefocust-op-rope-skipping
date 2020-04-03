@@ -63,6 +63,7 @@ import ugent.waves.healthrecommenderapp.Persistance.RecommendationDao;
 import ugent.waves.healthrecommenderapp.Services.NotificationCallback;
 import ugent.waves.healthrecommenderapp.Services.userActivityService;
 import ugent.waves.healthrecommenderapp.dataclasses.SessionHistoryData;
+import ugent.waves.healthrecommenderapp.sessionHistory.SessionHistoryListFragment;
 
 //TODO: show start + end time rope skipping session
 //TODO: show turns + mistake timestamps
