@@ -1,26 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="e13c2251-ca47-41b1-af5f-ca5a005e92bd" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/../WearableApp/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../WearableApp/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/app/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/../healthRecommenderApp/app/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/AndroidManifest.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/DataClasses/Activity.java" beforeDir="false" afterPath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/DataClasses/Activity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/DataClasses/SessionHistoryData.java" beforeDir="false" afterPath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/DataClasses/SessionHistoryData.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/RecommendationActivity.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/SavGolFilter.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/ScoreCalculation.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/Services/wearableService.java" beforeDir="false" afterPath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/Services/wearableService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/SessionHistoryActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/SessionHistoryActivity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/SessionHistoryAdapter.java" beforeDir="false" afterPath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/SessionHistoryAdapter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/SessionHistoryFragment.java" beforeDir="false" afterPath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/SessionHistoryFragment.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/SessionHistoryListFragment.java" beforeDir="false" afterPath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/SessionHistoryListFragment.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/goalHandler.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/res/layout/activity_recommendation.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/res/layout/activity_recommendation.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/res/layout/session_history_fragment.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/res/layout/session_history_fragment.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../logboek-masterproef.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/../logboek-masterproef.xlsx" afterDir="false" />
-    </list>
+    <list default="true" id="e13c2251-ca47-41b1-af5f-ca5a005e92bd" name="Default Changelist" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -189,10 +170,10 @@
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="999" y="311" key="#com.jetbrains.python.refactoring.move.PyMoveModuleMembersDialog/0.0.1536.824@0.0.1536.824" timestamp="1583946093403" />
-    <state x="548" y="169" key="FileChooserDialogImpl" timestamp="1584124398678">
+    <state x="548" y="169" key="FileChooserDialogImpl" timestamp="1586007084612">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="548" y="169" key="FileChooserDialogImpl/0.0.1536.824@0.0.1536.824" timestamp="1584124398678" />
+    <state x="548" y="169" key="FileChooserDialogImpl/0.0.1536.824@0.0.1536.824" timestamp="1586007084612" />
     <state width="1515" height="196" key="GridCell.Tab.0.bottom" timestamp="1584117897806">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
@@ -229,10 +210,10 @@
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="279" y="57" key="SettingsEditor/0.0.1536.824@0.0.1536.824" timestamp="1584010523151" />
-    <state x="0" y="0" key="com.intellij.ide.util.TipDialog" timestamp="1585309577116">
+    <state x="0" y="0" key="com.intellij.ide.util.TipDialog" timestamp="1586007031226">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="0" y="0" key="com.intellij.ide.util.TipDialog/0.0.1536.824@0.0.1536.824" timestamp="1585309577116" />
+    <state x="0" y="0" key="com.intellij.ide.util.TipDialog/0.0.1536.824@0.0.1536.824" timestamp="1586007031226" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
