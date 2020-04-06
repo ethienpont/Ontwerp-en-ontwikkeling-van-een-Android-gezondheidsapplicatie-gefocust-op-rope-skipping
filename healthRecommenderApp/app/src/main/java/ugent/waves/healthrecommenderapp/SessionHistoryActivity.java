@@ -61,7 +61,6 @@ import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
 import ugent.waves.healthrecommenderapp.Persistance.Recommendation;
 import ugent.waves.healthrecommenderapp.Persistance.RecommendationDao;
 import ugent.waves.healthrecommenderapp.Services.NotificationCallback;
-import ugent.waves.healthrecommenderapp.Services.userActivityService;
 import ugent.waves.healthrecommenderapp.dataclasses.SessionHistoryData;
 import ugent.waves.healthrecommenderapp.sessionHistory.SessionHistoryListFragment;
 
@@ -224,7 +223,7 @@ public class SessionHistoryActivity extends AppCompatActivity implements Notific
 
         ActivityTransitionRequest request = new ActivityTransitionRequest(transitions);
 
-        Intent i = new Intent(this, userActivityService.class);
+        Intent i = new Intent(this, ugent.waves.healthrecommenderapp.Services.broadcastReceiver.class);
         i.setAction("ACTIVITY_RECOGNITION");
 
         pendingIntent = PendingIntent.getBroadcast(this, 7, i, PendingIntent.FLAG_UPDATE_CURRENT);

@@ -18,6 +18,9 @@ public class Mistake {
     @ColumnInfo(name = "activity")
     private int activity;
 
+    @ColumnInfo(name = "week")
+    private int week;
+
     public int getUid() {
         return uid;
     }
@@ -48,5 +51,13 @@ public class Mistake {
 
     public void setActivity(int activity) {
         this.activity = activity;
+    }
+
+    public int getWeek() {
+        return week;
+    }
+
+    public void setWeek(int week) {
+        this.week = week;
     }
 }

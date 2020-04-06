@@ -21,8 +21,11 @@ public class Recommendation {
     @ColumnInfo(name = "duration")
     private Long duration;
 
-    @ColumnInfo(name = "rank")
-    private int rank;
+    @ColumnInfo(name = "pending")
+    private boolean pending;
+
+    @ColumnInfo(name = "nr")
+    private int nr;
 
     public int getActivity() {
         return activity;
@@ -56,11 +59,19 @@ public class Recommendation {
         this.uid = uid;
     }
 
-    public int getRank() {
-        return rank;
+    public boolean isPending() {
+        return pending;
     }
 
-    public void setRank(int rank) {
-        this.rank = rank;
+    public void setPending(boolean pending) {
+        this.pending = pending;
+    }
+
+    public int getNr() {
+        return nr;
+    }
+
+    public void setNr(int nr) {
+        this.nr = nr;
     }
 }

@@ -14,4 +14,7 @@ public interface MistakeDao {
 
     @Insert
     void insertMistake(Mistake mistake);
+
+    @Query("SELECT * FROM Mistake WHERE week > :week")
+    Mistake[] getMistakesFromWeek(int week);
 }

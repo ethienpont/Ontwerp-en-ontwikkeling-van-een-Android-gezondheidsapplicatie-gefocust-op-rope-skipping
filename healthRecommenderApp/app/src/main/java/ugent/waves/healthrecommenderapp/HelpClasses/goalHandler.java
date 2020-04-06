@@ -3,7 +3,6 @@ package ugent.waves.healthrecommenderapp.HelpClasses;
 import android.app.Activity;
 import android.content.Context;
 import android.os.AsyncTask;
-import android.util.Log;
 
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -14,12 +13,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ExecutionException;
 
 import androidx.work.WorkerParameters;
 import ugent.waves.healthrecommenderapp.Persistance.ActivityDao;
 import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
+import ugent.waves.healthrecommenderapp.Persistance.Mistake;
+import ugent.waves.healthrecommenderapp.Persistance.MistakeDao;
 import ugent.waves.healthrecommenderapp.Persistance.Recommendation;
 import ugent.waves.healthrecommenderapp.Persistance.RecommendationDao;
 import ugent.waves.healthrecommenderapp.Persistance.Session;
@@ -27,6 +27,10 @@ import ugent.waves.healthrecommenderapp.Persistance.SessionActivity;
 import ugent.waves.healthrecommenderapp.Persistance.SessionDao;
 import ugent.waves.healthrecommenderapp.healthRecommenderApplication;
 
+//TODO: in snooze alle entries ouder dan 10 weken verwijderen
+//TODO: week instellen
+//TODO: goal instellen
+//TODO: initiele setup van week en goal
 public class goalHandler {//extends Worker {
 
     private healthRecommenderApplication app;
@@ -38,9 +42,6 @@ public class goalHandler {//extends Worker {
     private AppDatabase appDb;
 
     private Map<Integer, Double> score;
-    private Random rand;
-    //"start" -> [], "end" -> [], "activity" -> []
-    //private Map<String, List<String>>
 
     public goalHandler(WorkerParameters params, Context context, healthRecommenderApplication app){
         //super(context, params);
@@ -49,19 +50,13 @@ public class goalHandler {//extends Worker {
         this.db = app.getFirestore();
         this.score = new HashMap<>();
         this.appDb = app.getAppDb();
-        this.rand = new Random();
     }
 
-    //TODO: wss verkeerd
-    private double Percentile(List<Double> mets, double Percentile)
-    {
+    //TODO: controleren
+    private double getPercentile(List<Double> mets, double Percentile) {
         Collections.sort(mets);
-        int Index = (int)Math.ceil(((double)Percentile / (double)100) * (double)mets.size());
-        return mets.get(Index-1);
-    }
-
-    private double getNewGoal(List<Double> s){
-        return Percentile(s, 0.60);
+        int i = (int)Math.floor((Percentile / (double)100) * (double)mets.size());
+        return mets.get(i);
     }
 
     //10 weken sessies inlezen
@@ -76,24 +71,16 @@ public class goalHandler {//extends Worker {
                 }
             }
             List<Double> scores = CollectionToList(score.values());
+
+            //if not enough data fill with defailt value of 600
             if(score.size() < 10){
                 for(int i = 0; i < 10-score.size(); i++){
                     scores.add((double) 600);
                 }
             }
-            goal = getNewGoal(scores);
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
 
-
-    public void getActivityData(){
-        try {
-            SessionActivity[] activities = new ActivityAsyncTask((Activity) context, appDb).execute().get();
-            Log.d("d", "d");
+            //new goal is 60th percentile of distribution
+            goal = getPercentile(scores, 60);
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -109,74 +96,87 @@ public class goalHandler {//extends Worker {
         return list;
     }
 
-    //TODO: rank
     public void generateRecommendations(){
         try {
             //TODO: door async niet ok??
             new RecommendationAsyncTask((Activity) context, appDb).execute();
             SessionActivity[] activities = new ActivityAsyncTask((Activity) context, appDb).execute().get();
 
+            //mistakes in last 10 weeks
+            Mistake[] mistakes = new MistakeAsyncTask((Activity) context, appDb, app.getWeeknr()-10).execute().get();
+
             //Count
-            Map<String, Integer> activity_count = new HashMap<>();
+            Map<Integer, Integer> activity_count = new HashMap<>();
             //duration
-            Map<String, Long> activity_duration = new HashMap<>();
+            Map<Integer, Long> activity_duration = new HashMap<>();
             //mets
-            Map<String, Double> activity_mets = new HashMap<>();
+            Map<Integer, Double> activity_mets = new HashMap<>();
 
             for(SessionActivity sa: activities){
-                if(!activity_count.containsKey(sa.getActivity()+"")){
-                    activity_count.put(sa.getActivity()+"", 0);
+                if(!activity_count.containsKey(sa.getActivity())){
+                    activity_count.put(sa.getActivity(), 0);
                 }
-                activity_count.put(sa.getActivity()+"", activity_count.get(sa.getActivity()+"") + 1);
+                activity_count.put(sa.getActivity(), activity_count.get(sa.getActivity()+"") + 1);
 
                 //sum duration
-                if(!activity_duration.containsKey(sa.getActivity()+"")){
-                    activity_duration.put(sa.getActivity()+"", (long) 0);
+                if(!activity_duration.containsKey(sa.getActivity())){
+                    activity_duration.put(sa.getActivity(), (long) 0);
                 }
                 //sum mets
-                if(!activity_mets.containsKey(sa.getActivity()+"")){
-                    activity_mets.put(sa.getActivity()+"", (double) 0);
+                if(!activity_mets.containsKey(sa.getActivity())){
+                    activity_mets.put(sa.getActivity(), (double) 0);
                 }
-                activity_duration.put(sa.getActivity()+"", activity_duration.get(sa.getActivity()+"") + (sa.getEnd()-sa.getStart()));
-                activity_mets.put(sa.getActivity()+"", activity_mets.get(sa.getActivity()+"") + sa.getMET_score());
+                activity_duration.put(sa.getActivity(), activity_duration.get(sa.getActivity()) + (sa.getEnd()-sa.getStart()));
+                activity_mets.put(sa.getActivity(), activity_mets.get(sa.getActivity()) + sa.getMET_score());
             }
 
             //metsPerMin
-            Map<String, Double> activity_metsPerMin = new HashMap<>();
+            Map<Integer, Double> activity_metsPerSec = new HashMap<>();
 
-            for(String c: activity_count.keySet()){
+            Map<Integer, Long> activity_mean_duration = new HashMap<>();
+
+            for(int c: activity_count.keySet()){
                 //mean duration
                 long meanDuration = activity_duration.get(c)/activity_count.get(c);
 
                 //mean mets
                 double meanMets = activity_mets.get(c)/activity_count.get(c);
 
-                double metsPerMin = metsPerMin(meanDuration, meanMets);
-                activity_metsPerMin.put(c, metsPerMin);
+                double metsPerSec = meanMets/meanDuration;
+                activity_metsPerSec.put(c, metsPerSec);
+                activity_mean_duration.put(c, meanDuration);
+            }
+
+            //1 keer gewichten berekenen
+            Map<Integer, Integer> weights = calculateWeights(mistakes, activity_count);
+
+            int totalWeight = 0;
+            for (int i : weights.keySet()) {
+                totalWeight += weights.get(i);
             }
 
             //recommendations
             double recommendedMets = 0;
-            //TODO: betere rank
-            int rank = 0;
+
+            //recommendations nummeren zodat 1 willekeurige kan opgevraagd worden uit de db
+            int number = 0;
 
             //TODO: wat als nog geen activiteiten
-            while(recommendedMets < 100){
-                String act = getRecommendedActivity(activity_count, activities.length);
-                //TODO: duration in min
-                long duration = (long) ( 0.2 + (3 - 0.2) * rand.nextDouble());
-                double mets = duration * activity_metsPerMin.get(act);
+            while(recommendedMets < app.getGoal()){
+                int act = getRecommendedActivity(weights, totalWeight);
+
+                double mets = activity_mean_duration.get(act) * activity_metsPerSec.get(act);
 
                 Recommendation r = new Recommendation();
-                r.setActivity(Integer.parseInt(act));
-                r.setDuration(duration);
+                r.setActivity(act);
+                r.setDuration(activity_mean_duration.get(act));
                 r.setMets(mets);
-                r.setRank(rank);
+                r.setNr(number);
 
                 AsyncTask.execute(() -> appDb.recommendationDao().insertRecommendation(r));
 
                 recommendedMets += mets;
-                rank++;
+                number++;
             }
 
         } catch (ExecutionException e) {
@@ -186,9 +186,24 @@ public class goalHandler {//extends Worker {
         }
     }
 
-    private String getRecommendedActivity(Map<String, Integer> counts, int total){
-        List<String> distribution = new ArrayList<>();
-        for(String c: counts.keySet()){
+    //TODO: test with model
+    private int getRecommendedActivity(Map<Integer, Integer> weights, int totalWeight){
+
+        int randomIndex = -1;
+        double random = Math.random() * totalWeight;
+        for (int i = 0; i < weights.size(); ++i)
+        {
+            random -= weights.get(i);
+            if (random <= 0.0d)
+            {
+                randomIndex = i;
+                break;
+            }
+        }
+        return weights.get(randomIndex);
+        /*
+        List<Integer> distribution = new ArrayList<>();
+        for(int c: counts.keySet()){
             //TODO: afronding niet ok
             double procent = counts.get(c)/total*10;
 
@@ -196,13 +211,47 @@ public class goalHandler {//extends Worker {
                 distribution.add(c);
             }
         }
-        return distribution.get(rand.nextInt(distribution.size()));
+        return distribution.get(rand.nextInt(distribution.size()));*/
     }
 
-    private double metsPerMin(long time, double mets){
-        return 0;
+    //enkel laatste 10 weken zodat verandering in rekening kan gebracht worden
+    private Map<Integer, Integer> calculateWeights(Mistake[] m, Map<Integer, Integer> c) {
+        Map<Integer, Integer> mistakeCounts = new HashMap<>();
+        for(Mistake mis: m){
+            if(!mistakeCounts.containsKey(mis.getActivity())){
+                    //weights altijd bij 1 beginnen, anders wordt activiteit totaal niet aangeraden als er geen fouten gemaakt zijn
+                    mistakeCounts.put(mis.getActivity(), 1);
+            }
+            mistakeCounts.put(mis.getActivity(), mistakeCounts.get(mis.getActivity()) + 1);
+        }
+
+        Map<Integer, Integer> w = new HashMap<>();
+
+        for(int i: c.keySet()){
+            w.put(i, c.get(i)*mistakeCounts.get(i));
+        }
+        return mistakeCounts;
     }
 
+
+    private static class MistakeAsyncTask extends AsyncTask<Void, Void, Mistake[]> {
+        //Prevent leak
+        private WeakReference<Activity> weakActivity;
+        private AppDatabase db;
+        private int week;
+
+        public MistakeAsyncTask(Activity activity, AppDatabase db, int week) {
+            weakActivity = new WeakReference<>(activity);
+            this.db = db;
+            this.week = week;
+        }
+
+        @Override
+        protected Mistake[] doInBackground(Void... params) {
+            MistakeDao mistakeDao = db.mistakeDao();
+            return mistakeDao.getMistakesFromWeek(week);
+        }
+    }
 
     private static class SessionAsyncTask extends AsyncTask<Void, Void, Session[]> {
         //Prevent leak

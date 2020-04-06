@@ -44,13 +44,14 @@ import ugent.waves.healthrecommenderapp.Persistance.Recommendation;
 import ugent.waves.healthrecommenderapp.Persistance.RecommendationDao;
 import ugent.waves.healthrecommenderapp.Recommendation.RecommendationListFragment;
 import ugent.waves.healthrecommenderapp.Services.NotificationCallback;
-import ugent.waves.healthrecommenderapp.Services.userActivityService;
+import ugent.waves.healthrecommenderapp.Services.broadcastReceiver;
 import ugent.waves.healthrecommenderapp.dataclasses.SessionHistoryData;
 import ugent.waves.healthrecommenderapp.sessionHistory.SessionHistoryListFragment;
 
 public class NavigationActivity extends AppCompatActivity implements NotificationCallback {
 
     private static final String TAG = "NavigationActivity";
+    private static final String ACTION_SNOOZE = "SNOOZE";
     private DrawerLayout mDrawer;
     private Toolbar toolbar;
     private NavigationView nvDrawer;
@@ -121,7 +122,7 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
             Picasso.get().load(app.getAccount().getPhotoUrl()).into(mImageView);
         }
 
-        registerReceiver(broadcastReceiver, new IntentFilter("SEND_NOTIFICATION"));
+        registerReceiver(broadcast_receiver, new IntentFilter("SEND_NOTIFICATION"));
 
         //goalHandler g = new goalHandler(null, this, app);
         //g.generateRecommendations();
@@ -185,7 +186,6 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
         mDrawer.closeDrawers();
     }
 
-
     private void initActivityDetection(){
         transitions = new ArrayList<>();
         //detect when user can't or should perform a physical activity
@@ -215,7 +215,7 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
 
         ActivityTransitionRequest request = new ActivityTransitionRequest(transitions);
 
-        Intent i = new Intent(this, userActivityService.class);
+        Intent i = new Intent(this, ugent.waves.healthrecommenderapp.Services.broadcastReceiver.class);
         i.setAction("ACTIVITY_RECOGNITION");
 
         pendingIntent = PendingIntent.getBroadcast(this, 7, i, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -233,7 +233,7 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
     /*
  RECOMMENDATION NOTIFICATION
   */
-    BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+    BroadcastReceiver broadcast_receiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             sendRecommendation();
@@ -254,21 +254,31 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
     }
 
     private void sendNotification(String messageBody) {
-        Intent intent = new Intent(this, SessionHistoryActivity.class);
+        //TODO: activiteit om sessie te starten
+        Intent intent = new Intent(this, NavigationActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 , intent,
                 PendingIntent.FLAG_ONE_SHOT);
 
         String channelId = "id";
         Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+
+        Intent snoozeIntent = new Intent(this, broadcastReceiver.class);
+        snoozeIntent.setAction(ACTION_SNOOZE);
+        //snoozeIntent.putExtra(EXTRA_NOTIFICATION_ID, 0);
+        PendingIntent snoozePendingIntent =
+                PendingIntent.getBroadcast(this, 0, snoozeIntent, 0);
+
+        //TODO: taal
         NotificationCompat.Builder notificationBuilder =
                 new NotificationCompat.Builder(this, channelId)
-                        .setSmallIcon(R.drawable.badminton)
-                        .setContentTitle("notification")
+                        .setSmallIcon(R.drawable.rope_skipping)
+                        .setContentTitle("recommendation")
                         .setContentText(messageBody)
                         .setAutoCancel(true)
                         .setSound(defaultSoundUri)
-                        .setContentIntent(pendingIntent);
+                        .setContentIntent(pendingIntent)
+                        .addAction(R.drawable.rope_skipping, "snooze", snoozePendingIntent);
 
         NotificationManager notificationManager =
                 (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
@@ -300,7 +310,7 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
         @Override
         protected Recommendation doInBackground(Void... params) {
             RecommendationDao recommendationDao = db.recommendationDao();
-            return recommendationDao.getRecommendationWithRank(rank);
+            return recommendationDao.getRecommendationWithNr(rank);
         }
     }
 }

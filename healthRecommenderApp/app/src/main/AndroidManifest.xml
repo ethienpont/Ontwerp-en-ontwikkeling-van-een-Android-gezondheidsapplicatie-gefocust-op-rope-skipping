@@ -21,7 +21,7 @@
         <activity android:name=".Recommendation.RecommendationActivity" />
 
         <receiver
-            android:name=".Services.userActivityService"
+            android:name=".Services.broadcastReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="ACTIVITY_RECOGNITION" />
