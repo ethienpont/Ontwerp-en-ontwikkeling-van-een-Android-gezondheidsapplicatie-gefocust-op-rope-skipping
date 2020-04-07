@@ -116,7 +116,7 @@ public class goalHandler {//extends Worker {
                 if(!activity_count.containsKey(sa.getActivity())){
                     activity_count.put(sa.getActivity(), 0);
                 }
-                activity_count.put(sa.getActivity(), activity_count.get(sa.getActivity()+"") + 1);
+                activity_count.put(sa.getActivity(), activity_count.get(sa.getActivity()) + 1);
 
                 //sum duration
                 if(!activity_duration.containsKey(sa.getActivity())){
@@ -162,10 +162,13 @@ public class goalHandler {//extends Worker {
             int number = 0;
 
             //TODO: wat als nog geen activiteiten
-            while(recommendedMets < app.getGoal()){
+            //TODO: met goal uit app
+            while(recommendedMets < 300){
                 int act = getRecommendedActivity(weights, totalWeight);
+                Long mean = activity_mean_duration.get(act);
+                double metsPerSec = activity_metsPerSec.get(act);
 
-                double mets = activity_mean_duration.get(act) * activity_metsPerSec.get(act);
+                double mets = (double) mean * metsPerSec;
 
                 Recommendation r = new Recommendation();
                 r.setActivity(act);
@@ -189,18 +192,18 @@ public class goalHandler {//extends Worker {
     //TODO: test with model
     private int getRecommendedActivity(Map<Integer, Integer> weights, int totalWeight){
 
-        int randomIndex = -1;
+        int randomAct = -1;
         double random = Math.random() * totalWeight;
-        for (int i = 0; i < weights.size(); ++i)
+        for (int i: weights.keySet())
         {
             random -= weights.get(i);
             if (random <= 0.0d)
             {
-                randomIndex = i;
+                randomAct = i;
                 break;
             }
         }
-        return weights.get(randomIndex);
+        return randomAct;
         /*
         List<Integer> distribution = new ArrayList<>();
         for(int c: counts.keySet()){
@@ -219,18 +222,22 @@ public class goalHandler {//extends Worker {
         Map<Integer, Integer> mistakeCounts = new HashMap<>();
         for(Mistake mis: m){
             if(!mistakeCounts.containsKey(mis.getActivity())){
-                    //weights altijd bij 1 beginnen, anders wordt activiteit totaal niet aangeraden als er geen fouten gemaakt zijn
-                    mistakeCounts.put(mis.getActivity(), 1);
+                    mistakeCounts.put(mis.getActivity(), 0);
             }
             mistakeCounts.put(mis.getActivity(), mistakeCounts.get(mis.getActivity()) + 1);
         }
 
         Map<Integer, Integer> w = new HashMap<>();
 
+        //als er fouten gemaakt zijn, meer gewicht geven
         for(int i: c.keySet()){
-            w.put(i, c.get(i)*mistakeCounts.get(i));
+            if(mistakeCounts.containsKey(i)){
+                w.put(i, c.get(i)*mistakeCounts.get(i));
+            } else{
+                w.put(i, c.get(i));
+            }
         }
-        return mistakeCounts;
+        return w;
     }
 
 

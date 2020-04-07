@@ -43,7 +43,9 @@ import ugent.waves.healthrecommenderapp.healthRecommenderApplication;
 9. post to firebase: users -> testuser -> sessions
  */
 //TODO: structurize
-//TODO: gebruiker kan op start klikken om een sessie te beginnen, die recommendation op pending, als sessie gedaan pending recommendation ophalen en checken of alles gedaan is.
+//TODO: sessie gedaan pending recommendation ophalen en checken of alles gedaan is, zoniet recommendation laten staan
+//TODO: works met debugger, niet zonder
+//TODO: toon connected device
 public class wearableService extends WearableListenerService {
 
     private List<JumpMoves> output;

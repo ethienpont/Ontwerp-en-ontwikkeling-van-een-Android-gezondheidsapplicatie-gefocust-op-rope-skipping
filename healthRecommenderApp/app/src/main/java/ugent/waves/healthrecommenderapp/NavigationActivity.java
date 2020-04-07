@@ -39,6 +39,7 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
+import ugent.waves.healthrecommenderapp.HelpClasses.goalHandler;
 import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
 import ugent.waves.healthrecommenderapp.Persistance.Recommendation;
 import ugent.waves.healthrecommenderapp.Persistance.RecommendationDao;
@@ -52,6 +53,8 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
 
     private static final String TAG = "NavigationActivity";
     private static final String ACTION_SNOOZE = "SNOOZE";
+    private static final String ACTIVITY_ID = "ACTIVITY_ID";
+    private static final String RECOMMENDATION_ID = "RECOMMENDATION_ID";
     private DrawerLayout mDrawer;
     private Toolbar toolbar;
     private NavigationView nvDrawer;
@@ -124,8 +127,9 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
 
         registerReceiver(broadcast_receiver, new IntentFilter("SEND_NOTIFICATION"));
 
-        //goalHandler g = new goalHandler(null, this, app);
+        goalHandler g = new goalHandler(null, this, app);
         //g.generateRecommendations();
+        //sendRecommendation();
 
     }
 
@@ -245,7 +249,7 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
         //TODO: get rank from app
         try {
             Recommendation r = new RecommendationAsyncTask(this, appDb, 0).execute().get();
-            sendNotification(r.getActivity()+r.getDuration()+"");
+            sendNotification(r.getUid(), r.getActivity(), r.getActivity()+r.getDuration()+"");
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -253,12 +257,18 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
         }
     }
 
-    private void sendNotification(String messageBody) {
+    private void sendNotification(int recommendationId, int activityId, String messageBody) {
+        //**add this line**
+        int requestID = (int) System.currentTimeMillis();
+
         //TODO: activiteit om sessie te starten
-        Intent intent = new Intent(this, NavigationActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 , intent,
-                PendingIntent.FLAG_ONE_SHOT);
+        //TODO: check flags
+        Intent intent = new Intent(getApplicationContext(), StartSessionActivity.class);
+        intent.putExtra(ACTIVITY_ID, activityId);
+        intent.putExtra(RECOMMENDATION_ID, recommendationId);
+        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, requestID , intent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
 
         String channelId = "id";
         Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
@@ -267,7 +277,7 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
         snoozeIntent.setAction(ACTION_SNOOZE);
         //snoozeIntent.putExtra(EXTRA_NOTIFICATION_ID, 0);
         PendingIntent snoozePendingIntent =
-                PendingIntent.getBroadcast(this, 0, snoozeIntent, 0);
+                PendingIntent.getBroadcast(getApplicationContext(), requestID, snoozeIntent, 0);
 
         //TODO: taal
         NotificationCompat.Builder notificationBuilder =

@@ -3,6 +3,7 @@ package ugent.waves.healthrecommenderapp.Services;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.AsyncTask;
 
 import com.google.android.gms.location.ActivityTransition;
 import com.google.android.gms.location.ActivityTransitionEvent;
@@ -35,7 +36,11 @@ public class broadcastReceiver extends BroadcastReceiver {
             s.setWeekday(c.get(Calendar.DAY_OF_WEEK));
             s.setWeek(app.getWeeknr());
 
-            app.getAppDb().snoozeDao().insertSnooze(s);
+            try{
+                AsyncTask.execute(() -> {app.getAppDb().snoozeDao().insertSnooze(s);});
+            } catch (Exception e){
+                e.printStackTrace();
+            }
         }
 
         else if (ActivityTransitionResult.hasResult(intent)) {

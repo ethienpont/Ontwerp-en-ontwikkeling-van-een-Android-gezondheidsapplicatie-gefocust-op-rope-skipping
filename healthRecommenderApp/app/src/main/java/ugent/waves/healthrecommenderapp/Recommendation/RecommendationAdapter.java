@@ -1,17 +1,22 @@
 package ugent.waves.healthrecommenderapp.Recommendation;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
 import ugent.waves.healthrecommenderapp.Persistance.Recommendation;
 import ugent.waves.healthrecommenderapp.R;
+import ugent.waves.healthrecommenderapp.StartSessionActivity;
 
 public class RecommendationAdapter extends RecyclerView.Adapter<RecommendationAdapter.RecommendationViewHolder> {
+    private static final String ACTIVITY_ID = "ACTIVITY_ID";
+    private static final String RECOMMENDATION_ID = "RECOMMENDATION_ID";
     private final Context context;
     private Recommendation[] mDataset;
 
@@ -23,12 +28,14 @@ public class RecommendationAdapter extends RecyclerView.Adapter<RecommendationAd
         public TextView activity;
         public TextView turns;
         public TextView mets;
+        public RelativeLayout relativeLayout;
         public RecommendationViewHolder(View itemView) {
             super(itemView);
             this.imageView = (ImageView) itemView.findViewById(R.id.thumbnail);
             this.activity = (TextView) itemView.findViewById(R.id.activity);
             this.turns = (TextView) itemView.findViewById(R.id.turns);
             this.mets = (TextView) itemView.findViewById(R.id.points);
+            relativeLayout = (RelativeLayout)itemView.findViewById(R.id.layout);
         }
     }
 
@@ -54,6 +61,15 @@ public class RecommendationAdapter extends RecyclerView.Adapter<RecommendationAd
         holder.mets.setText(mDataset[position].getMets() + " points");
         holder.activity.setText(mDataset[position].getActivity()+"");
         //holder.imageView.setImageResource(mDataset[position].getRank());
+        holder.relativeLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(context, StartSessionActivity.class);
+                intent.putExtra(ACTIVITY_ID, mDataset[position].getActivity());
+                intent.putExtra(RECOMMENDATION_ID, mDataset[position].getUid());
+                context.startActivity(intent);
+            }
+        });
     }
 
     // Return the size of your dataset (invoked by the layout manager)
