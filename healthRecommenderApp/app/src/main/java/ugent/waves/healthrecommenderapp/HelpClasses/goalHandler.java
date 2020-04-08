@@ -175,6 +175,8 @@ public class goalHandler {//extends Worker {
                 r.setDuration(activity_mean_duration.get(act));
                 r.setMets(mets);
                 r.setNr(number);
+                r.setPending(false);
+                r.setDone(false);
 
                 AsyncTask.execute(() -> appDb.recommendationDao().insertRecommendation(r));
 

@@ -26,22 +26,12 @@ import ugent.waves.healthrecommenderapp.Enums.JumpMoves;
 import ugent.waves.healthrecommenderapp.HelpClasses.SavGolFilter;
 import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
 import ugent.waves.healthrecommenderapp.Persistance.Mistake;
+import ugent.waves.healthrecommenderapp.Persistance.Recommendation;
 import ugent.waves.healthrecommenderapp.Persistance.Session;
 import ugent.waves.healthrecommenderapp.Persistance.SessionActivity;
 import ugent.waves.healthrecommenderapp.healthRecommenderApplication;
 
-/*
-1. accelerometer data in map "time" -> [], "x" -> []...
-2. segmentation: shape = (segments, samples, 3, 1)
-3. output = int per segment
-4. group output per activity in transitions (startIndex -> activity)
-5. start + end time of activities ( "start" -> [], "end" -> [], "activity"->[] )
-6. post to firebase: users -> testuser -> sessions -> activities
 
-7. heartrate data in map "time" -> [], "HR" -> []
-8. calculate met_points
-9. post to firebase: users -> testuser -> sessions
- */
 //TODO: structurize
 //TODO: sessie gedaan pending recommendation ophalen en checken of alles gedaan is, zoniet recommendation laten staan
 //TODO: works met debugger, niet zonder
@@ -230,6 +220,21 @@ public class wearableService extends WearableListenerService {
             appDb.mistakeDao().insertMistake(mk);
         }
 
+        Recommendation[] pending = appDb.recommendationDao().getPendingRecommendation(true);
+
+        //TODO: voor een bepaalde activiteit moet de gegeven duur en gegeven mets bereikt zijn
+        int fulfilledRecommendation = -1;
+        for(int i = 0; i < pending.length; i++){
+            if(pending[i].getMets() >= totalMets){
+                fulfilledRecommendation = i;
+            }
+        }
+        if(fulfilledRecommendation != -1){
+            Recommendation d = pending[fulfilledRecommendation];
+            d.setDone(true);
+            appDb.recommendationDao().updateRecommendation(d);
+        }
+        //TODO: als niet fulfilled toon alert dat een pending recommendation nog niet gedaan is
     }
 
     //TODO: crash als minder dan 1 sec sessie

@@ -27,6 +27,9 @@ public class Recommendation {
     @ColumnInfo(name = "nr")
     private int nr;
 
+    @ColumnInfo(name = "done")
+    private boolean done;
+
     public int getActivity() {
         return activity;
     }
@@ -73,5 +76,13 @@ public class Recommendation {
 
     public void setNr(int nr) {
         this.nr = nr;
+    }
+
+    public boolean isDone() {
+        return done;
+    }
+
+    public void setDone(boolean done) {
+        this.done = done;
     }
 }

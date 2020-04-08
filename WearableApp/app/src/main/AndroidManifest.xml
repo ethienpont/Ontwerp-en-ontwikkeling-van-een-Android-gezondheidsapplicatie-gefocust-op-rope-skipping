@@ -28,10 +28,19 @@
         </activity>
         <activity android:name=".SessionActivity"></activity>
         <service
-            android:name=".messagingService"
-            android:exported="false">
+            android:name=".messagingService">
             <intent-filter>
-                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            <!-- listeners receive events that match the actioand data filters -->
+                <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <action android:name="com.google.android.gms.wearable.MESSAGE_LISTENER" />
+                <action android:name="com.google.android.gms.wearable.CAPABILITY_CHANGED" />
+                <action android:name="com.google.android.gms.wearable.CHANNEL_EVENT" />
+
+                <data
+                    android:host="*"
+                    android:pathPrefix="/SESSION_START"
+                    android:scheme="wear" />
             </intent-filter>
         </service>
     </application>

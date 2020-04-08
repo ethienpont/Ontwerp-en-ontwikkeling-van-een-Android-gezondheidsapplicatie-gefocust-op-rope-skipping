@@ -19,6 +19,8 @@ import ugent.waves.healthrecommenderapp.Persistance.RecommendationDao;
 import ugent.waves.healthrecommenderapp.R;
 import ugent.waves.healthrecommenderapp.healthRecommenderApplication;
 
+//TODO: uitgrijzen van done recommendations
+//TODO: toon pending recommendations
 public class RecommendationListFragment extends Fragment {
 
     private healthRecommenderApplication app;

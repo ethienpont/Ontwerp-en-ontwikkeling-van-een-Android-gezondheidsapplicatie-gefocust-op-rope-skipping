@@ -2,6 +2,7 @@ package ugent.waves.healthrecommenderapp.Recommendation;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,16 +27,16 @@ public class RecommendationAdapter extends RecyclerView.Adapter<RecommendationAd
     public static class RecommendationViewHolder extends RecyclerView.ViewHolder {
         public ImageView imageView;
         public TextView activity;
-        public TextView turns;
-        public TextView mets;
+        public TextView duration;
+        public TextView pending;
         public RelativeLayout relativeLayout;
         public RecommendationViewHolder(View itemView) {
             super(itemView);
-            this.imageView = (ImageView) itemView.findViewById(R.id.thumbnail);
-            this.activity = (TextView) itemView.findViewById(R.id.activity);
-            this.turns = (TextView) itemView.findViewById(R.id.turns);
-            this.mets = (TextView) itemView.findViewById(R.id.points);
-            relativeLayout = (RelativeLayout)itemView.findViewById(R.id.layout);
+            this.imageView = (ImageView) itemView.findViewById(R.id.thumbnail_recommendation);
+            this.activity = (TextView) itemView.findViewById(R.id.activity_recommendation);
+            this.duration = (TextView) itemView.findViewById(R.id.duration);
+            this.pending = (TextView) itemView.findViewById(R.id.pending);
+            relativeLayout = (RelativeLayout)itemView.findViewById(R.id.layout_recommendation);
         }
     }
 
@@ -49,7 +50,7 @@ public class RecommendationAdapter extends RecyclerView.Adapter<RecommendationAd
     @Override
     public RecommendationAdapter.RecommendationViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         LayoutInflater layoutInflater = LayoutInflater.from(parent.getContext());
-        View listItem= layoutInflater.inflate(R.layout.session_history_list_item, parent, false);
+        View listItem= layoutInflater.inflate(R.layout.recommendation_list_item, parent, false);
         RecommendationAdapter.RecommendationViewHolder viewHolder = new RecommendationAdapter.RecommendationViewHolder(listItem);
         return viewHolder;
     }
@@ -57,10 +58,16 @@ public class RecommendationAdapter extends RecyclerView.Adapter<RecommendationAd
     // Replace the contents of a view (invoked by the layout manager)
     @Override
     public void onBindViewHolder(RecommendationAdapter.RecommendationViewHolder holder, final int position) {
-        holder.turns.setText(mDataset[position].getDuration() + " duration");
-        holder.mets.setText(mDataset[position].getMets() + " points");
+        holder.duration.setText(mDataset[position].getDuration() + " duration");
+        holder.pending.setText("");
         holder.activity.setText(mDataset[position].getActivity()+"");
-        //holder.imageView.setImageResource(mDataset[position].getRank());
+        holder.imageView.setImageResource(R.drawable.running);
+        if(mDataset[position].isPending()){
+            holder.pending.setText("Pending");
+        }
+        if(mDataset[position].isDone()){
+            holder.relativeLayout.setBackgroundColor(Color.TRANSPARENT);
+        }
         holder.relativeLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
