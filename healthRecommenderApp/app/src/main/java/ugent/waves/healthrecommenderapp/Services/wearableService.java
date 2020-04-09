@@ -1,5 +1,6 @@
 package ugent.waves.healthrecommenderapp.Services;
 
+import android.content.SharedPreferences;
 import android.util.Log;
 
 import com.google.android.gms.wearable.MessageEvent;
@@ -62,7 +63,7 @@ public class wearableService extends WearableListenerService {
     private int hardZone = 4;
     private int maximumZone = 5;
 
-    private static final double MAXHR = 200;
+    private double MAXHR = 200;
 
     //RAW DATA STORAGE
     private Map<String, List<Float>> session_heartbeat;
@@ -84,9 +85,18 @@ public class wearableService extends WearableListenerService {
     
     public void onMessageReceived(@NonNull MessageEvent messageEvent) {
         app = (healthRecommenderApplication) this.getApplicationContext();
+        SharedPreferences sharedPref = getSharedPreferences(app.getAccount().getId(), MODE_PRIVATE);
+
         //TODO: initialise weeknr 0 bij eerste opstart
         app.setWeeknr(0);
         firestore = app.getFirestore();
+
+        //TODO: get age from account (via shared pref mss of get profile in loginact)
+        //this.MAXHR = app.getAccount().getRequestedScopes()
+        String bday = sharedPref.getString("bday", "");
+        String bmonth = sharedPref.getString("bmonth", "");
+        String byear = sharedPref.getString("byear", "");
+
         //TODO: parameters bepalen
         filters = new HashMap<>();
         filters.put(JumpMoves.SLOW, new SavGolFilter(0, 51, 3));

@@ -8,6 +8,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -89,6 +90,11 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
 
         nvDrawer = (NavigationView) findViewById(R.id.nvView);
 
+        nvDrawer.getMenu().findItem(R.id.logout).setOnMenuItemClickListener(menuItem -> {
+            logout();
+            return true;
+        });
+
         setupDrawerContent(nvDrawer);
 
         drawerToggle = new ActionBarDrawerToggle(this, mDrawer, toolbar, R.string.drawer_open,  R.string.drawer_close);
@@ -128,9 +134,21 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
         registerReceiver(broadcast_receiver, new IntentFilter("SEND_NOTIFICATION"));
 
         goalHandler g = new goalHandler(null, this, app);
+
+        SharedPreferences sharedPref = getSharedPreferences(app.getAccount().getId(), MODE_PRIVATE);
+        String bday = sharedPref.getString("bday", "");
+        String bmonth = sharedPref.getString("bmonth", "");
+        String byear = sharedPref.getString("byear", "");
+
         //g.generateRecommendations();
         //sendRecommendation();
 
+    }
+
+    private void logout() {
+        app.getmGoogleSignInClient().signOut();
+        Intent intent = new Intent(this, LoginActivity.class);
+        startActivity(intent);
     }
 
     @Override

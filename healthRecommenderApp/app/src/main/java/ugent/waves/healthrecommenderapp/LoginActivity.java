@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -13,13 +14,27 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.Scopes;
 import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.tasks.Task;
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
+import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.JsonFactory;
+import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.services.people.v1.PeopleService;
+import com.google.api.services.people.v1.model.Person;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -27,6 +42,7 @@ import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+//TODO: wat als user permissies zoals age niet toelaat, alert tonen
 public class LoginActivity extends Activity implements View.OnClickListener {
 
     private static final String TAG = "LoginFragment";
@@ -56,10 +72,12 @@ public class LoginActivity extends Activity implements View.OnClickListener {
 
         app = (healthRecommenderApplication) this.getApplicationContext();
 
+        Scope age = new Scope("https://www.googleapis.com/auth/user.birthday.read");
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
                 .requestId()
                 .requestIdToken("726533384380-p8e9er5fialjs892tu5c5aub0dgqsbb0.apps.googleusercontent.com")
+                .requestScopes(age)
                 .build();
 
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
@@ -74,6 +92,17 @@ public class LoginActivity extends Activity implements View.OnClickListener {
 
     private void accessApp(){
         app.setAccount(account);
+        app.setmGoogleSignInClient(mGoogleSignInClient);
+        /*
+        try {
+            //TODO: getting profile info doesnt finish
+            Person pr = new GetProfileDetails(account, this, "la").execute().get();
+            Log.d("d", "d");
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }*/
         Intent intent = new Intent(this, NavigationActivity.class);
         startActivity(intent);
     }
@@ -266,5 +295,49 @@ public class LoginActivity extends Activity implements View.OnClickListener {
     public void onClick(View v) {
         Intent intent = mGoogleSignInClient.getSignInIntent();
         startActivityForResult(intent, RC_SIGN_IN);
+    }
+
+    static class GetProfileDetails extends AsyncTask<Void, Void, Person> {
+
+        private PeopleService ps;
+        private int authError = -1;
+        private WeakReference<Activity> weakAct;
+        private String TAG;
+
+        GetProfileDetails(GoogleSignInAccount account, Activity activity, String TAG) {
+            this.TAG = TAG;
+            this.weakAct = new WeakReference<>(activity);
+            GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(
+                    this.weakAct.get(), Collections.singleton(Scopes.PROFILE));
+            credential.setSelectedAccount(account.getAccount());
+            HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
+            JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
+            ps = new PeopleService.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
+                    .setApplicationName("healthRecommenderApp")
+                    .build();
+        }
+
+        @Override
+        protected Person doInBackground(Void... params) {
+            Person meProfile = null;
+            try {
+                meProfile = ps
+                        .people()
+                        .get("people/me")
+                        .setPersonFields("birthdays")
+                        .execute();
+            } catch (UserRecoverableAuthIOException e) {
+                e.printStackTrace();
+                authError = 0;
+            } catch (GoogleJsonResponseException e) {
+                e.printStackTrace();
+                authError = 1;
+            } catch (IOException e) {
+                e.printStackTrace();
+                authError = 2;
+            }
+            return meProfile;
+        }
+
     }
 }

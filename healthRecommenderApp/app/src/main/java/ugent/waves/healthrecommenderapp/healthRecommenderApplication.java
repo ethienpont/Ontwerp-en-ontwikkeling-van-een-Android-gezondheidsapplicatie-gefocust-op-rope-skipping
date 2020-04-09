@@ -3,6 +3,7 @@ package ugent.waves.healthrecommenderapp;
 import android.app.Application;
 
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import androidx.room.Room;
@@ -23,6 +24,8 @@ public class healthRecommenderApplication extends Application {
     private int rank;
 
     private GoogleSignInAccount account;
+
+    private GoogleSignInClient mGoogleSignInClient;
 
     public int getWeeknr() {
         return weeknr;
@@ -87,5 +90,13 @@ public class healthRecommenderApplication extends Application {
 
     public void setAccount(GoogleSignInAccount account) {
         this.account = account;
+    }
+
+    public GoogleSignInClient getmGoogleSignInClient() {
+        return mGoogleSignInClient;
+    }
+
+    public void setmGoogleSignInClient(GoogleSignInClient mGoogleSignInClient) {
+        this.mGoogleSignInClient = mGoogleSignInClient;
     }
 }
