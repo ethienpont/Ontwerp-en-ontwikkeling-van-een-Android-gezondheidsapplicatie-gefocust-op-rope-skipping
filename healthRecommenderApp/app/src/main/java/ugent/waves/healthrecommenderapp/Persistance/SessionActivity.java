@@ -29,6 +29,9 @@ public class SessionActivity implements Parcelable {
     @ColumnInfo(name = "activity")
     private int activity;
 
+    @ColumnInfo(name = "week")
+    private int week;
+
     public SessionActivity(){
 
     }
@@ -110,6 +113,13 @@ public class SessionActivity implements Parcelable {
         this.MET_score = MET_score;
     }
 
+    public int getWeek() {
+        return week;
+    }
+
+    public void setWeek(int week) {
+        this.week = week;
+    }
 
     @Override
     public int describeContents() {

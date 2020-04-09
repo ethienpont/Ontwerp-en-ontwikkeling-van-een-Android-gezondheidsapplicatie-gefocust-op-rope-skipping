@@ -1,7 +1,6 @@
 package ugent.waves.healthrecommenderapp.Services;
 
 import android.content.SharedPreferences;
-import android.util.Log;
 
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.WearableListenerService;
@@ -34,7 +33,6 @@ import ugent.waves.healthrecommenderapp.healthRecommenderApplication;
 
 
 //TODO: structurize
-//TODO: sessie gedaan pending recommendation ophalen en checken of alles gedaan is, zoniet recommendation laten staan
 //TODO: works met debugger, niet zonder
 //TODO: toon connected device
 public class wearableService extends WearableListenerService {
@@ -99,11 +97,11 @@ public class wearableService extends WearableListenerService {
 
         //TODO: parameters bepalen
         filters = new HashMap<>();
-        filters.put(JumpMoves.SLOW, new SavGolFilter(0, 51, 3));
-        filters.put(JumpMoves.FAST, new SavGolFilter(0, 33, 5));
-        filters.put(JumpMoves.SIDE_SWING, new SavGolFilter(0, 101, 5));
-        filters.put(JumpMoves.CROSS_OVER, new SavGolFilter(0, 41, 3));
-        filters.put(JumpMoves.FORWARD_180, new SavGolFilter(0, 51, 3));
+        filters.put(JumpMoves.SLOW, new SavGolFilter(25, 25, 3));
+        filters.put(JumpMoves.FAST, new SavGolFilter(16, 16, 5));
+        filters.put(JumpMoves.SIDE_SWING, new SavGolFilter(50, 50, 5));
+        filters.put(JumpMoves.CROSS_OVER, new SavGolFilter(20, 20, 3));
+        filters.put(JumpMoves.FORWARD_180, new SavGolFilter(25, 25, 3));
 
         s = new Session();
         activities = new ArrayList<>();
@@ -176,31 +174,45 @@ public class wearableService extends WearableListenerService {
             }
         }
         else if(messageEvent.getPath().equalsIgnoreCase(STOP)){
-            try  {
-                normalization();
-                output = getActivityPredictions();
-                trantitions = get_trantitions();
-                calculateSessionData();
-            } catch(Exception e){
-                e.printStackTrace();
+            //als minstens 1 segment kan gemaakt worden
+            if(session_accelerometer.get("x").size() > 52){
+                try  {
+                    normalization();
+                    output = getActivityPredictions();
+                    trantitions = get_trantitions();
+                    calculateSessionData();
+                } catch(Exception e){
+                    e.printStackTrace();
 
+                }
             }
         }
     }
 
-    //TODO: checken of sessie genoeg data bevat
     private void calculateSessionData(){
         int turns = numberTurns();
-        int week = app.getWeeknr();
+        //TODO: get from app
+        int week = 0;
         List<Mistake> m = mistakes_ML();
 
         s.setWeek(app.getWeeknr());
         s.setTurns(turns);
 
         double totalMets = 0;
+
+        Map<JumpMoves, Integer> activityDuration = new HashMap<>();
+        Map<JumpMoves, Integer> activityMets = new HashMap<>();
+
         //activities
         for(int i = 0; i < trantitions.get("start").size(); i++){
-            double met_score = processMETscore(trantitions.get("start").get(i), trantitions.get("end").get(i));
+            double met_score;
+            if(session_heartbeat.get("HR").size() != 0){
+                met_score = processMETscore(trantitions.get("start").get(i), trantitions.get("end").get(i));
+            } else{
+                met_score = 0;
+                //TODO: alert met melding dat geen hartdata
+            }
+
             Long start = (long) Float.parseFloat(String.valueOf(trantitions.get("start").get(i)));
             Long end = (long) Float.parseFloat(String.valueOf(trantitions.get("end").get(i)));
             int act = (int) Float.parseFloat(String.valueOf(trantitions.get("activity").get(i)));
@@ -209,11 +221,23 @@ public class wearableService extends WearableListenerService {
 
             //mistakes are processed in another way
             if(JumpMoves.getJump(act) != JumpMoves.MISTAKE){
+                //keep duration
+                if(!activityDuration.containsKey(JumpMoves.getJump(act))){
+                    activityDuration.put(JumpMoves.getJump(act), 0);
+                }
+                activityDuration.put(JumpMoves.getJump(act), (int) (activityDuration.get(JumpMoves.getJump(act)) + (end-start)));
+                //keep mets
+                if(!activityMets.containsKey(JumpMoves.getJump(act))){
+                    activityMets.put(JumpMoves.getJump(act), 0);
+                }
+                activityMets.put(JumpMoves.getJump(act), (int) (activityMets.get(JumpMoves.getJump(act)) + met_score));
+
                 SessionActivity a = new SessionActivity();
                 a.setEnd(end);
                 a.setStart(start);
                 a.setMET_score(met_score);
                 a.setActivity(act);
+                a.setWeek(week);
 
                 activities.add(a);
             }
@@ -232,10 +256,10 @@ public class wearableService extends WearableListenerService {
 
         Recommendation[] pending = appDb.recommendationDao().getPendingRecommendation(true);
 
-        //TODO: voor een bepaalde activiteit moet de gegeven duur en gegeven mets bereikt zijn
+        //check of pending recommendation voldoet aan sessie
         int fulfilledRecommendation = -1;
         for(int i = 0; i < pending.length; i++){
-            if(pending[i].getMets() >= totalMets){
+            if( (pending[i].getMets() >= activityMets.get(JumpMoves.getJump(pending[i].getActivity()))) && (pending[i].getDuration() >= activityDuration.get(JumpMoves.getJump(pending[i].getActivity()))) ){
                 fulfilledRecommendation = i;
             }
         }
@@ -244,10 +268,11 @@ public class wearableService extends WearableListenerService {
             d.setDone(true);
             appDb.recommendationDao().updateRecommendation(d);
         }
+
         //TODO: als niet fulfilled toon alert dat een pending recommendation nog niet gedaan is
+        //TODO: alert als pending wel fulfilled
     }
 
-    //TODO: crash als minder dan 1 sec sessie
     private List<JumpMoves> getActivityPredictions(){
         File sdcard = getExternalFilesDir(null);
         Interpreter interpreter = new Interpreter(new File(sdcard != null ? sdcard.getAbsolutePath() : null, "converted_model2.tflite"));
@@ -328,7 +353,7 @@ public class wearableService extends WearableListenerService {
             float time_delta = trantitions.get("end").get(i) - trantitions.get("start").get(i);
 
             //ASSUME jump before causes mistake
-            //TODO: kan niet hier inserten want sessionid nog niet geweten
+            //kan niet hier inserten want sessionid nog niet geweten
             if(m == JumpMoves.MISTAKE && time_delta > 1){
                 Mistake mis = new Mistake();
                 mis.setActivity((int) Float.parseFloat(String.valueOf(trantitions.get("activity").get(i-1))));
@@ -339,8 +364,7 @@ public class wearableService extends WearableListenerService {
         return mistakes;
     }
 
-    private int localMaxima(float a[])
-    {
+    private int localMaxima(float a[]) {
         int count = 0;
 
         for (int i = 1; i < a.length - 1; i++)
@@ -352,7 +376,7 @@ public class wearableService extends WearableListenerService {
     }
 
     //TODO: soms negatieve indexen???
-    //TODO: finetunen
+    //TODO: finetunen met definitief model
     private int numberTurns(){
         //TODO: put in different place
         Map<JumpMoves, Integer> iterations = new HashMap<>();
@@ -405,7 +429,8 @@ public class wearableService extends WearableListenerService {
     }
 
     //TODO: hartslag in lagere zones ook meerekenen? + formule herzien
-    //TODO: wat als geen heartdata
+    //TODO: 2x verylight, 16x hard, 32x maximum? mag eigen draai aan geven?
+    //TODO: met minutes -> mag omrekenen naar seconden bij recommendation calculation?
     private double processMETscore(Float start, Float end){
         List<Float> heartRateFiltered = session_heartbeat.get("HR").stream()
                 .filter(h -> session_heartbeat.get("time").get(session_heartbeat.get("HR").indexOf(h)) > start && session_heartbeat.get("time").get(session_heartbeat.get("HR").indexOf(h)) < end)
@@ -413,6 +438,7 @@ public class wearableService extends WearableListenerService {
         List<Float> timeFiltered = session_heartbeat.get("time").stream()
                 .filter(t -> t > start && t < end)
                 .collect(Collectors.toList());
+
         int score = 0;
         //MPA = ligthzone, MPV = moderate zone
         double timeMPA, timeMPV;
@@ -454,12 +480,11 @@ public class wearableService extends WearableListenerService {
     ACTIVITY RECOGNITION: PREPROCESSING
      */
 
-    //TODO
     //normalizeren in scikit: zorgen dat unit norm van de vector 1 is
     //dus delen door unit norm?
     private void normalization(){
         float x, y, z;
-        double squared_sum, norm, checksum;
+        double squared_sum, norm;
         for( int i = 0; i < session_accelerometer.get("x").size(); i++){
             x = session_accelerometer.get("x").get(i);
             y = session_accelerometer.get("y").get(i);
@@ -469,23 +494,21 @@ public class wearableService extends WearableListenerService {
             session_accelerometer.get("x").set(i, Float.parseFloat(Double.toString(x/norm)));
             session_accelerometer.get("y").set(i, Float.parseFloat(Double.toString(y/norm)));
             session_accelerometer.get("z").set(i, Float.parseFloat(Double.toString(z/norm)));
-            checksum = Math.sqrt((x/norm)*(x/norm) + (y/norm)*(y/norm) + (z/norm)*(z/norm));
-            Log.d("d", "d");
         }
     }
 
-    //TODO: sampling mss in realtime schatten?
+    //segmentgrootte is bepaald door data waarop model getraind is, dus vaste samplingwaarde
     private int getSamplingFrequentie(){
         return 52;
     }
 
-    //TODO: hopsize
+    //TODO: frames zonder overlap bij voorspellingen?
     private float[][][] segmentation(){
-        int N_FEATURES = 3;
         int FRAME_SIZE = getSamplingFrequentie() * 1;
 
         List<float[][]> frames = new ArrayList<>();
 
+        //TODO: laatste datapunten die niet in een frame passen toch meenemen?
         for( int i = 0; i < session_accelerometer.get("x").size() - FRAME_SIZE; i += FRAME_SIZE){
             float[][] segment = listTosegment(session_accelerometer.get("x").subList(i, i+FRAME_SIZE), session_accelerometer.get("y").subList(i, i+FRAME_SIZE), session_accelerometer.get("x").subList(i, i+FRAME_SIZE));
 
@@ -536,7 +559,7 @@ public class wearableService extends WearableListenerService {
 
         float end, start;
         if(indexes.size() == 1){
-            int numberSensorSamples = (output.size())*FRAME_SIZE; //TODO: drop partial frames
+            int numberSensorSamples = (output.size())*FRAME_SIZE;
             start = session_accelerometer.get("time_delta").get(0);
             end = session_accelerometer.get("time_delta").get(numberSensorSamples);
             trantitions_.get("start").add(start);
@@ -582,7 +605,7 @@ public class wearableService extends WearableListenerService {
     HELP FUNCTIONS
      */
 
-    //TODO: system.nanotime was time since epoch, nu rare waarden
+    //TODO: check
     //SECONDEN
     private double floatToTimeDouble(float time1,float time2) {
         //seconden

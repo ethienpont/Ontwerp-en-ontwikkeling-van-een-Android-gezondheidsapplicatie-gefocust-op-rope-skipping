@@ -11,8 +11,8 @@ public interface RecommendationDao {
     @Query("DELETE FROM Recommendation")
     void deleteAllRecommendations();
 
-    @Query("SELECT * FROM Recommendation WHERE nr = :rank")
-    Recommendation getRecommendationWithNr(int rank);
+    @Query("SELECT * FROM Recommendation WHERE done = :done")
+    Recommendation[] getRecommendationWithDone(boolean done);
 
     @Query("SELECT * FROM Recommendation")
     Recommendation[] getAllRecommendations();

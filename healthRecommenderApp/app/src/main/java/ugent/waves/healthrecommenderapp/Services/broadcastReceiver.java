@@ -19,8 +19,7 @@ public class broadcastReceiver extends BroadcastReceiver {
     private static final String ACTION_SNOOZE = "SNOOZE";
     private healthRecommenderApplication app;
 
-    //TODO: zo zullen niet alle recommendations een notificatie versturen, lijst met alle
-    //TODO: gebruiker laten snoozen
+    //TODO: gebruiker laten snoozen: testen
     @Override
     public void onReceive(Context context, Intent intent) {
         app = (healthRecommenderApplication) context.getApplicationContext();
@@ -28,8 +27,7 @@ public class broadcastReceiver extends BroadcastReceiver {
 
         if(intent.getAction() == ACTION_SNOOZE){
             //TODO: weekdag + uur in db waarop gesnoozed
-            //TODO: threshold van een uur op een dag is max 10 want zullen 10 weken bekijken
-            //TODO: in 1 hour kan meerdere keren snoozen
+            //TODO: threshold van een uur op een dag: goede waarde?? want in 1 hour kan meerdere keren snoozen
 
             Snooze s = new Snooze();
             s.setHour(c.get(Calendar.HOUR));

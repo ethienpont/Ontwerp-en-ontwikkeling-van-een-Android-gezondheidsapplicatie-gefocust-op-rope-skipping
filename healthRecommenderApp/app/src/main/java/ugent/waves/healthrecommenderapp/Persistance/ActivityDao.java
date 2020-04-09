@@ -14,4 +14,7 @@ public interface ActivityDao {
 
     @Insert
     void insertActivity(SessionActivity activity);
+
+    @Query("SELECT * FROM Activity WHERE week > :week")
+    SessionActivity[] getActivitiesFromWeek(int week);
 }

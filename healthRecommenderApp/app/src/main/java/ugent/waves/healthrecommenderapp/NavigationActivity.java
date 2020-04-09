@@ -264,10 +264,12 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
 
     @Override
     public void sendRecommendation(){
-        //TODO: get rank from app
+        //TODO: testen
         try {
-            Recommendation r = new RecommendationAsyncTask(this, appDb, 0).execute().get();
-            sendNotification(r.getUid(), r.getActivity(), r.getActivity()+r.getDuration()+"");
+            Recommendation[] r = new RecommendationAsyncTask(this, appDb).execute().get();
+            //random recommendation
+            int index = (int) Math.floor(Math.random()*r.length);
+            sendNotification(r[index].getUid(), r[index].getActivity(), r[index].getActivity()+r[index].getDuration()+"");
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -323,22 +325,20 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
     }
 
 
-    private static class RecommendationAsyncTask extends AsyncTask<Void, Void, Recommendation> {
+    private static class RecommendationAsyncTask extends AsyncTask<Void, Void, Recommendation[]> {
         //Prevent leak
         private WeakReference<Activity> weakActivity;
         private AppDatabase db;
-        private int rank;
 
-        public RecommendationAsyncTask(Activity activity, AppDatabase db, int rank) {
+        public RecommendationAsyncTask(Activity activity, AppDatabase db) {
             weakActivity = new WeakReference<>(activity);
             this.db = db;
-            this.rank = rank;
         }
 
         @Override
-        protected Recommendation doInBackground(Void... params) {
+        protected Recommendation[] doInBackground(Void... params) {
             RecommendationDao recommendationDao = db.recommendationDao();
-            return recommendationDao.getRecommendationWithNr(rank);
+            return recommendationDao.getRecommendationWithDone(false);
         }
     }
 }

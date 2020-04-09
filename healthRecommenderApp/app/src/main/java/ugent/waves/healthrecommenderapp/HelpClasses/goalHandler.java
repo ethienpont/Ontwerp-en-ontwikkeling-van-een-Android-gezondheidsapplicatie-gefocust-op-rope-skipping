@@ -27,9 +27,8 @@ import ugent.waves.healthrecommenderapp.Persistance.SessionActivity;
 import ugent.waves.healthrecommenderapp.Persistance.SessionDao;
 import ugent.waves.healthrecommenderapp.healthRecommenderApplication;
 
-//TODO: in snooze alle entries ouder dan 10 weken verwijderen
-//TODO: week instellen
-//TODO: goal instellen
+//TODO: WEKELIJKS: week instellen, goal instellen, in snooze alle entries ouder dan 10 weken verwijderen, recommendations genereren
+//TODO: DAGELIJKS: timestill in app resetten
 //TODO: initiele setup van week en goal
 public class goalHandler {//extends Worker {
 
@@ -52,7 +51,7 @@ public class goalHandler {//extends Worker {
         this.appDb = app.getAppDb();
     }
 
-    //TODO: controleren
+    //TODO: in papers documentatie zoeken over 60 percentiel methode
     private double getPercentile(List<Double> mets, double Percentile) {
         Collections.sort(mets);
         int i = (int)Math.floor((Percentile / (double)100) * (double)mets.size());
@@ -72,7 +71,8 @@ public class goalHandler {//extends Worker {
             }
             List<Double> scores = CollectionToList(score.values());
 
-            //if not enough data fill with defailt value of 600
+            //TODO: recommended mets per week nakijken
+            //if not enough data fill with default value of 600
             if(score.size() < 10){
                 for(int i = 0; i < 10-score.size(); i++){
                     scores.add((double) 600);
@@ -96,11 +96,15 @@ public class goalHandler {//extends Worker {
         return list;
     }
 
+    //TODO: wat doen met data ouder dan 10 weken (activiteiten, sessions)?
     public void generateRecommendations(){
         try {
             //TODO: door async niet ok??
+            //recommendations van vorige week verwijderen
             new RecommendationAsyncTask((Activity) context, appDb).execute();
-            SessionActivity[] activities = new ActivityAsyncTask((Activity) context, appDb).execute().get();
+
+            //activiteiten van voorbije 10 weken
+            SessionActivity[] activities = new ActivityAsyncTask((Activity) context, appDb, app.getWeeknr()-10).execute().get();
 
             //mistakes in last 10 weeks
             Mistake[] mistakes = new MistakeAsyncTask((Activity) context, appDb, app.getWeeknr()-10).execute().get();
@@ -158,6 +162,7 @@ public class goalHandler {//extends Worker {
             //recommendations
             double recommendedMets = 0;
 
+            //TODO: recommendations opvragen die niet done of pending zijn en daar willekeurig 1 uit kiezen -> number weg
             //recommendations nummeren zodat 1 willekeurige kan opgevraagd worden uit de db
             int number = 0;
 
@@ -219,6 +224,7 @@ public class goalHandler {//extends Worker {
         return distribution.get(rand.nextInt(distribution.size()));*/
     }
 
+    //TODO: gewichten ok?
     //enkel laatste 10 weken zodat verandering in rekening kan gebracht worden
     private Map<Integer, Integer> calculateWeights(Mistake[] m, Map<Integer, Integer> c) {
         Map<Integer, Integer> mistakeCounts = new HashMap<>();
@@ -231,6 +237,7 @@ public class goalHandler {//extends Worker {
 
         Map<Integer, Integer> w = new HashMap<>();
 
+        //count activiteit * aantal fouten tijdes activiteit
         //als er fouten gemaakt zijn, meer gewicht geven
         for(int i: c.keySet()){
             if(mistakeCounts.containsKey(i)){
@@ -290,16 +297,18 @@ public class goalHandler {//extends Worker {
         //Prevent leak
         private WeakReference<Activity> weakActivity;
         private AppDatabase db;
+        private int week;
 
-        public ActivityAsyncTask(Activity activity, AppDatabase db) {
+        public ActivityAsyncTask(Activity activity, AppDatabase db, int week) {
             weakActivity = new WeakReference<>(activity);
             this.db = db;
+            this.week = week;
         }
 
         @Override
         protected SessionActivity[] doInBackground(Void... params) {
             ActivityDao activityDao = db.activityDao();
-            return activityDao.getAllActivities();
+            return activityDao.getActivitiesFromWeek(week);
         }
     }
 

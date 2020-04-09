@@ -20,7 +20,7 @@ public abstract class SessionDao {
     }
 
     @Insert
-    abstract void _insertAll(List<SessionActivity> activities);  //this could go in a PetDao instead...
+    abstract void _insertAll(List<SessionActivity> activities);
 
     @Insert
     public abstract long insertSession(Session session);
