@@ -82,22 +82,13 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+//TODO: stop session
+//TODO: connecteer met juiste node
 public class SessionActivity extends FragmentActivity implements SensorEventListener, AmbientMode.AmbientCallbackProvider {
 
     private String TAG="SessionActivity";
     private String ACCELEROMETER = "/ACCELEROMETER";
 
-    private GoogleSignInAccount account;
-    private OnDataPointListener mListener;
-
-    private DataSource heartRateDataSource;
-    private Session session;
-    private String activity;
-    private GoogleSignInClient mGoogleSignInClient;
-
-    private DatabaseReference mDatabase;
-    private FirebaseUser user;
-    private FirebaseAuth mAuth;
     private SensorManager sensorManager;
     private Sensor acceleroSensor;
     private FirebaseFirestore firestore;
@@ -113,6 +104,7 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
     private static final String START = "/START";
 
     private String HEARTRATE = "/HEARTRATE";
+    private HeartRateDisplayFragment displayFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -122,9 +114,6 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
         // Enables Always-on
         ambientController = AmbientModeSupport.attach(this);
 
-        Intent intent = getIntent();
-        activity = intent.getStringExtra(ActivityListAdapter.ACTIVITY);
-
         firestore = FirebaseFirestore.getInstance();
 
         sensorManager = (SensorManager) getSystemService(this.SENSOR_SERVICE);
@@ -133,204 +122,26 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
 
         nodeClient = Wearable.getNodeClient(this);
         messageClient = Wearable.getMessageClient(this);
+
+        Fragment f = SessionFragment.newInstance(null);
+        switchContent(R.id.container, f);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        //account = GoogleSignIn.getLastSignedInAccount(this);
-        if (account != null) {
-            //initFitnessListener();
-        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        //unregisterFitnessDataListener();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        //unregisterFitnessDataListener();
-        //endSession();
     }
 
-    /* TODO: GOOGLE FIT
-    private void startSession() {
-        Fitness.getRecordingClient(this, account)
-                .subscribe(DataType.TYPE_HEART_RATE_BPM)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        Log.i(TAG, "Successfully subscribed (heart rate)!");
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.i(TAG, "There was a problem subscribing (heart rate).");
-                    }
-                });
-
-        // Retrieve current time in milliseconds
-        Calendar cal = Calendar.getInstance();
-        Date now = new Date();
-        cal.setTime(now);
-        long startTime = cal.getTimeInMillis();
-        // Set type of workout
-        String activityType = null;
-        if (activity.equalsIgnoreCase("running")) {
-            activityType = FitnessActivities.RUNNING;
-        } else if (activity.equalsIgnoreCase("biking")) {
-            activityType = FitnessActivities.BIKING;
-        } else if (activity.equalsIgnoreCase("badminton")) {
-            activityType = FitnessActivities.BADMINTON;
-        } else {
-            activityType = FitnessActivities.OTHER;
-        }
-
-        session = new Session.Builder()
-                //.setName(startTime+"")
-                //.setIdentifier(startTime+"")
-                //.setDescription(startTime+"")
-                .setStartTime(startTime, TimeUnit.MILLISECONDS)
-                .setActivity(activityType)
-                .build();
-
-        Task<Void> response = Fitness.getSessionsClient(this, account)
-                .startSession(session)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        Log.i(TAG, "Session successfully started");
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.i(TAG, "There was a problem starting session");
-                    }
-                });
-    }
-
-    private void endSession() {
-        Log.e(TAG, session.getActivity());
-        Fitness.getSessionsClient(this, account)
-                .stopSession(null)
-                .addOnSuccessListener(new OnSuccessListener<List<Session>>() {
-                    @Override
-                    public void onSuccess(List<Session> sessions) {
-                        Log.i(TAG, "Session successfully stopped");
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.i(TAG, "There was a problem stopping session");
-                    }
-                });
-
-        Fitness.getRecordingClient(this, account)
-                .unsubscribe(DataType.TYPE_HEART_RATE_BPM)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        Log.i(TAG, "Successfully unsubscribed for data type");
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.i(TAG, "Failed to unsubscribe for data type");
-                    }
-                });
-    }
-
-    private void initFitnessListener() {
-        DataSourcesRequest requestData = new DataSourcesRequest.Builder()
-                .setDataTypes(DataType.TYPE_HEART_RATE_BPM)
-                .setDataSourceTypes(DataSource.TYPE_RAW)
-                .build();
-
-        Fitness.getSensorsClient(this, account)
-                .findDataSources(requestData)
-                .addOnSuccessListener(
-                        new OnSuccessListener<List<DataSource>>() {
-                            @Override
-                            public void onSuccess(List<DataSource> dataSources) {
-                                for (DataSource dataSource : dataSources) {
-                                    if (dataSource.getDataType().equals(DataType.TYPE_HEART_RATE_BPM)
-                                            && mListener == null) {
-                                        Log.d(TAG, dataSource.toString());
-                                        heartRateDataSource = dataSource;
-                                        // Call method to register HR sensor
-                                        registerFitnessDataListener(dataSource, DataType.TYPE_HEART_RATE_BPM);
-                                    }
-                                }
-                            }
-                        });
-    }
-    private void registerFitnessDataListener(final DataSource dataSource, final DataType dataType) {
-        // [START register_data_listener]
-        mListener =
-                new OnDataPointListener() {
-                    @Override
-                    public void onDataPoint(DataPoint dataPoint) {
-                        for (Field field : dataPoint.getDataType().getFields()) {
-                            Value val = dataPoint.getValue(field);
-                            Log.e(TAG, val.toString());
-                        }
-                    }
-                };
-
-        SensorRequest requestSensor = new SensorRequest.Builder()
-                .setDataSource(dataSource)
-                .setDataType(dataType)
-                .setSamplingRate(1, TimeUnit.SECONDS)
-                .build();
-
-        Fitness.getSensorsClient(this, account)
-                .add(requestSensor, mListener)
-                .addOnCompleteListener(
-                        new OnCompleteListener<Void>() {
-                            @Override
-                            public void onComplete(@NonNull Task<Void> task) {
-                                if (task.isSuccessful()) {
-                                    Log.i(TAG, "Listener registered!");
-                                } else {
-                                    Log.e(TAG, "Listener not registered.", task.getException());
-                                }
-                            }
-                        });
-        // [END register_data_listener]
-    }
-
-    private void unregisterFitnessDataListener() {
-        if (mListener == null) {
-            // If there is no registered listener, there is nothing to unregister
-            return;
-        }
-
-        // [START unregister_data_listener]
-        Fitness.getSensorsClient(this, account)
-                .remove(mListener)
-                .addOnCompleteListener(
-                        new OnCompleteListener<Boolean>() {
-                            @Override
-                            public void onComplete(@NonNull Task<Boolean> task) {
-                                if (task.isSuccessful() && task.getResult()) {
-                                    Log.i(TAG, "Listener was removed!");
-                                } else {
-                                    Log.i(TAG, "Listener was not removed." + task.getException());
-                                }
-                            }
-                        });
-        // [END unregister_data_listener]
-    }
-
-*/
     private void startRopeSkippingSession() {
         accelero_dataPoints = new ArrayList<>();
         heart_rate_dataPoints = new ArrayList<>();
@@ -382,23 +193,16 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
     }
 
 
-    public void onClickStartSession(View view) {
-        if(activity.equals("rope skipping")){
-            startRopeSkippingSession();
-        } else{
-            //initFitnessListener();
-            //startSession();
-        }
+    public void startSession() {
+        startRopeSkippingSession();
+        Fragment f = HeartRateDisplayFragment.newInstance(null);
+        displayFragment = (HeartRateDisplayFragment) f;
+        switchContent(R.id.container, f);
     }
 
 
     public void onClickStopSession(View view) {
-        if(activity.equals("rope skipping")){
-            endRopeSkippingSession();
-        } else{
-            //unregisterFitnessDataListener();
-            //endSession();
-        }
+        endRopeSkippingSession();
     }
 
     @Override
@@ -421,7 +225,7 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
                     });
             //TODO: heartbeat constant 0???
         } else if(event.sensor.getType() == Sensor.TYPE_HEART_BEAT){
-            Log.d(TAG, event.values[0]+"");
+            displayFragment.showHeartRate(event.values[0]);
             nodeClient.getConnectedNodes()
                     .addOnSuccessListener(new OnSuccessListener<List<Node>>() {
                         @Override
@@ -463,10 +267,6 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
         return new MyAmbientCallback();
     }
 
-    //TODO: hier niet history sessies tonen
-    public void onClickData(View view) {
-        switchContent(R.id.container,SessionFragment.newInstance(sessionData));
-    }
 
     private class MyAmbientCallback extends AmbientMode.AmbientCallback {
         @Override

@@ -18,7 +18,7 @@
         android:supportsRtl="true"
         android:theme="@android:style/Theme.DeviceDefault">
         <activity
-            android:name=".ActivityList"
+            android:name=".LoginActivity"
             android:label="@string/title_activity_list">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

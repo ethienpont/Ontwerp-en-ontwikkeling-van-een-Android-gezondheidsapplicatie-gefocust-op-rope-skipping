@@ -64,7 +64,6 @@ public class LoginActivity extends Activity implements View.OnClickListener {
     private GoogleSignInClient mGoogleSignInClient;
     private GoogleSignInAccount account;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
