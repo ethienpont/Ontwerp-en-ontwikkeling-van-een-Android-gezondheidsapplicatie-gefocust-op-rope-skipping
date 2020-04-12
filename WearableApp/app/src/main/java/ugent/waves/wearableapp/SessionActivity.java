@@ -9,13 +9,17 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.wear.ambient.AmbientMode;
 import androidx.wear.ambient.AmbientModeSupport;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -82,12 +86,14 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-//TODO: stop session
-//TODO: connecteer met juiste node
-public class SessionActivity extends FragmentActivity implements SensorEventListener, AmbientMode.AmbientCallbackProvider {
+//TODO: ambedient
+public class SessionActivity extends AppCompatActivity implements SensorEventListener, AmbientMode.AmbientCallbackProvider {
 
     private String TAG="SessionActivity";
     private String ACCELEROMETER = "/ACCELEROMETER";
+
+    private String NOTIFICATION = "/SEND_NOTIFICATION";
+    private String NOTIFICATION_MESSAGE = "/NOTIFICATION_MESSAGE";
 
     private SensorManager sensorManager;
     private Sensor acceleroSensor;
@@ -105,20 +111,27 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
 
     private String HEARTRATE = "/HEARTRATE";
     private HeartRateDisplayFragment displayFragment;
+    private wearableAppApplication app;
+
+    private Node nodeChosen;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_session);
 
+        app = (wearableAppApplication) this.getApplicationContext();
+
         // Enables Always-on
         ambientController = AmbientModeSupport.attach(this);
 
-        firestore = FirebaseFirestore.getInstance();
+        LocalBroadcastManager.getInstance(this).registerReceiver((broadcast_receiver),
+                new IntentFilter(NOTIFICATION)
+        );
 
         sensorManager = (SensorManager) getSystemService(this.SENSOR_SERVICE);
         acceleroSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        heartRateSensor = sensorManager.getDefaultSensor(Sensor.TYPE_HEART_BEAT);
+        heartRateSensor = sensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE);
 
         nodeClient = Wearable.getNodeClient(this);
         messageClient = Wearable.getMessageClient(this);
@@ -126,6 +139,26 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
         Fragment f = SessionFragment.newInstance(null);
         switchContent(R.id.container, f);
     }
+
+    //TODO: broadcast doesnt arrive
+    BroadcastReceiver broadcast_receiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String id = intent.getStringExtra(NOTIFICATION_MESSAGE);
+            nodeClient.getConnectedNodes()
+                    .addOnSuccessListener(new OnSuccessListener<List<Node>>() {
+                        @Override
+                        public void onSuccess(List<Node> nodes) {
+                            for (Node n : nodes) {
+                                if(n.getId().equals(id)){
+                                    nodeChosen = n;
+                                }
+                            }
+                            startSession();
+                        }
+                    });
+        }
+    };
 
     @Override
     protected void onResume() {
@@ -147,42 +180,25 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
         heart_rate_dataPoints = new ArrayList<>();
         sensorManager.registerListener(this, acceleroSensor, SensorManager.SENSOR_DELAY_NORMAL);
         sensorManager.registerListener(this, heartRateSensor, SensorManager.SENSOR_DELAY_NORMAL);
-        nodeClient.getConnectedNodes()
-                .addOnSuccessListener(new OnSuccessListener<List<Node>>() {
-                    @Override
-                    public void onSuccess(List<Node> nodes) {
-                        for(Node node : nodes) {
-                            messageClient.sendMessage(node.getId(), START, new byte[]{})
+        messageClient.sendMessage(nodeChosen.getId(), START, new byte[]{})
                                     .addOnSuccessListener(new OnSuccessListener<Integer>() {
                                         @Override
                                         public void onSuccess(Integer integer) {
                                             //gelukt
                                         }
                                     });
-                        }
-                    }
-                });
     }
 
     private void endRopeSkippingSession() {
         sensorManager.unregisterListener(this);
         currentSession = UUID.randomUUID().toString();
-
-        nodeClient.getConnectedNodes()
-                .addOnSuccessListener(new OnSuccessListener<List<Node>>() {
-                    @Override
-                    public void onSuccess(List<Node> nodes) {
-                        for(Node node : nodes) {
-                            messageClient.sendMessage(node.getId(), STOP, new byte[]{})
+        messageClient.sendMessage(nodeChosen.getId(), STOP, new byte[]{})
                                     .addOnSuccessListener(new OnSuccessListener<Integer>() {
                                         @Override
                                         public void onSuccess(Integer integer) {
                                             //gelukt
                                         }
                                     });
-                        }
-                    }
-                });
     }
 
     public void switchContent(int id, Fragment fragment) {
@@ -192,56 +208,89 @@ public class SessionActivity extends FragmentActivity implements SensorEventList
         ft.commit();
     }
 
+    public void chooseNode(){
+        nodeClient.getConnectedNodes()
+                .addOnSuccessListener(new OnSuccessListener<List<Node>>() {
+                                          @Override
+                                          public void onSuccess(List<Node> nodes) {
+                                              ArrayList<String> nodeNames = new ArrayList<>();
+                                              for(Node n: nodes){
+                                                  nodeNames.add(n.getDisplayName());
+                                              }
+
+                                              Fragment f = NodeFragment.newInstance(nodeNames);
+                                              switchContent(R.id.container, f);
+                                          }
+                                      });
+    }
+
+    public void setNode(final String name){
+        nodeClient.getConnectedNodes()
+                .addOnSuccessListener(new OnSuccessListener<List<Node>>() {
+                    @Override
+                    public void onSuccess(List<Node> nodes) {
+                        for (Node node : nodes) {
+                            if(node.getDisplayName().equals(name)){
+                                nodeChosen = node;
+                                startSession();
+                            }
+                        }
+                    }
+                });
+    }
+
+    //start session begint hier
+    public void showDialog(){
+        BluetoothDialogFragment b = BluetoothDialogFragment.newInstance();
+        FragmentManager fm = getSupportFragmentManager();
+        b.show(fm, "");
+        //transaction.commit();
+    }
 
     public void startSession() {
-        startRopeSkippingSession();
         Fragment f = HeartRateDisplayFragment.newInstance(null);
         displayFragment = (HeartRateDisplayFragment) f;
         switchContent(R.id.container, f);
+        startRopeSkippingSession();
     }
 
 
-    public void onClickStopSession(View view) {
+    public void stopSession() {
         endRopeSkippingSession();
+        Fragment f = SessionFragment.newInstance(null);
+        switchContent(R.id.container, f);
     }
 
     @Override
     public void onSensorChanged(final SensorEvent event) {
         if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
-            nodeClient.getConnectedNodes()
-                    .addOnSuccessListener(new OnSuccessListener<List<Node>>() {
-                        @Override
-                        public void onSuccess(List<Node> nodes) {
-                            for(Node node : nodes) {
-                                messageClient.sendMessage(node.getId(),ACCELEROMETER, FloatArray2ByteArray(event.values, System.nanoTime()))
+            messageClient.sendMessage(nodeChosen.getId(),ACCELEROMETER, FloatArray2ByteArray(event.values, System.nanoTime()))
                                         .addOnSuccessListener(new OnSuccessListener<Integer>() {
                                             @Override
                                             public void onSuccess(Integer integer) {
                                                 //gelukt
                                             }
                                         });
-                            }
-                        }
-                    });
             //TODO: heartbeat constant 0???
-        } else if(event.sensor.getType() == Sensor.TYPE_HEART_BEAT){
-            displayFragment.showHeartRate(event.values[0]);
-            nodeClient.getConnectedNodes()
-                    .addOnSuccessListener(new OnSuccessListener<List<Node>>() {
-                        @Override
-                        public void onSuccess(List<Node> nodes) {
-                            for(Node node : nodes) {
-                                messageClient.sendMessage(node.getId(),HEARTRATE, FloatArray2ByteArray(event.values, System.nanoTime()))
+        } else if(event.sensor.getType() == Sensor.TYPE_HEART_RATE){
+            if (displayFragment.isAdded() && displayFragment.isVisible() && displayFragment.getUserVisibleHint()) {
+                displayFragment.showHeartRate(event.values[0]);
+            }
+            messageClient.sendMessage(nodeChosen.getId(),HEARTRATE, FloatArray2ByteArray(event.values, System.nanoTime()))
                                         .addOnSuccessListener(new OnSuccessListener<Integer>() {
                                             @Override
                                             public void onSuccess(Integer integer) {
                                                 //gelukt
                                             }
                                         });
-                            }
-                        }
-                    });
         }
+    }
+
+    public void signOut(){
+        app.getClient().signOut();
+
+        Intent intent = new Intent(this, LoginActivity.class);
+        startActivity(intent);
     }
 
     public byte[] FloatArray2ByteArray(float[] values, Long time){

@@ -8,7 +8,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -134,11 +133,6 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
         registerReceiver(broadcast_receiver, new IntentFilter("SEND_NOTIFICATION"));
 
         goalHandler g = new goalHandler(null, this, app);
-
-        SharedPreferences sharedPref = getSharedPreferences(app.getAccount().getId(), MODE_PRIVATE);
-        String bday = sharedPref.getString("bday", "");
-        String bmonth = sharedPref.getString("bmonth", "");
-        String byear = sharedPref.getString("byear", "");
 
         //g.generateRecommendations();
         //sendRecommendation();

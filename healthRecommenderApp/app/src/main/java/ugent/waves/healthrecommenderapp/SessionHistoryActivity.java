@@ -554,7 +554,7 @@ public class SessionHistoryActivity extends AppCompatActivity implements Notific
         @Override
         protected Recommendation doInBackground(Void... params) {
             RecommendationDao recommendationDao = db.recommendationDao();
-            return recommendationDao.getRecommendationWithNr(rank);
+            return recommendationDao.getRecommendationForId(rank);
         }
     }
 

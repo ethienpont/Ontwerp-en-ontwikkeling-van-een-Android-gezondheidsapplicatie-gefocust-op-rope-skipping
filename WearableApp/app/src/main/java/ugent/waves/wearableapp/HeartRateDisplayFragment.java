@@ -8,6 +8,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -38,13 +39,23 @@ public class HeartRateDisplayFragment extends Fragment {
 
         t = (TextView) view.findViewById(R.id.hr);
 
+        ImageView stop = (ImageView) view.findViewById(R.id.stop);
+        stop.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                ((SessionActivity)getActivity()).stopSession();
+            }
+        });
+
         return view;
     }
 
     //TODO: heartrate is 0
     //TODO: als boven 220-age komt -> rood + melding
     public void showHeartRate(float hr){
-        t.setText(hr+"");
+        t.setText((int) hr+"");
     }
 
 }

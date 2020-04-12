@@ -1,14 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".LoginActivity">
 
-    <com.google.android.gms.common.SignInButton
-        android:id="@+id/sign_in_button"
+    <LinearLayout
+        android:orientation="vertical"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="top"
+            android:layout_marginLeft="10dp"
+            android:layout_marginBottom="10dp"
+            android:textSize="15sp"
+            android:text = "Sign in to get personal notifications."
+            android:textStyle="bold"/>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <LinearLayout
+            xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/google"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="left"
+            android:orientation="horizontal"
+            android:layout_marginLeft="10dp"
+            android:layout_marginBottom="10dp">
+            <ImageView
+                android:layout_height="35dp"
+                android:layout_width="35dp"
+                android:src="@drawable/google_icon"
+                android:layout_marginRight="5dp"
+                android:contentDescription="stop button" />
+            <TextView
+                android:id="@+id/text_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:layout_gravity="center"
+                android:text = "Google SignIn"/>
+        </LinearLayout>
+
+        <LinearLayout
+            xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="left"
+            android:orientation="horizontal"
+            android:layout_marginLeft="10dp"
+            android:layout_marginBottom="10dp"
+            android:onClick="ignore"
+            tools:ignore="OnClick">
+            <ImageView
+                android:id="@+id/stop"
+                android:layout_height="35dp"
+                android:layout_width="35dp"
+                android:src="@drawable/ignore_icon"
+
+                android:layout_marginRight="5dp"
+                android:contentDescription="ignore button"
+                />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:layout_gravity="center"
+                android:text = "Ignore"/>
+        </LinearLayout>
+    </LinearLayout>
+
+</ScrollView>

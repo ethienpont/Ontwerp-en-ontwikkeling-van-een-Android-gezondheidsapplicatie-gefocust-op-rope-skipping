@@ -36,7 +36,6 @@ import androidx.core.content.ContextCompat;
 
 //TODO: permissions
 //TODO: age
-//TODO: sign out
 public class LoginActivity extends WearableActivity implements View.OnClickListener{
 
     private static final String TAG = "LoginActivity";
@@ -75,9 +74,10 @@ public class LoginActivity extends WearableActivity implements View.OnClickListe
                 .build();
 
         mGoogleSignInClient = GoogleSignIn.getClient(getApplicationContext(), options);
+        app.setClient(mGoogleSignInClient);
 
         account = GoogleSignIn.getLastSignedInAccount(this);
-        findViewById(R.id.sign_in_button).setOnClickListener(this);
+        findViewById(R.id.google).setOnClickListener(this);
 
         if(account != null){
             accessApp();
@@ -262,5 +262,9 @@ public class LoginActivity extends WearableActivity implements View.OnClickListe
     @Override
     public void onClick(View v) {
         signIn();
+    }
+
+    public void ignore(View v){
+        accessApp();
     }
 }

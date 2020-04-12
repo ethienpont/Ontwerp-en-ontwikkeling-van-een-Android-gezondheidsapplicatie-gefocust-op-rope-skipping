@@ -26,7 +26,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".SessionActivity"></activity>
+        <activity android:name=".SessionActivity"
+            android:theme="@style/AppTheme"></activity>
         <service
             android:name=".messagingService">
             <intent-filter>

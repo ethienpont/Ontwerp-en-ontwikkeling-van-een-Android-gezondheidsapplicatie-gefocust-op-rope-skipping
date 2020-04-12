@@ -2,16 +2,17 @@ package ugent.waves.wearableapp;
 
 import android.app.Application;
 
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.firebase.auth.FirebaseUser;
 
 public class wearableAppApplication extends Application {
-    private FirebaseUser user;
+    private GoogleSignInClient client;
 
-    public FirebaseUser getUser() {
-        return user;
+    public GoogleSignInClient getClient() {
+        return client;
     }
 
-    public void setUser(FirebaseUser user) {
-        this.user = user;
+    public void setClient(GoogleSignInClient client) {
+        this.client = client;
     }
 }

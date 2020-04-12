@@ -1,15 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/image_hr"
+        android:layout_gravity="top | center"
+        android:layout_height="50dp"
+        android:layout_width="30dp"
+        android:src="@drawable/rope_skipping"
+        android:tint="@color/white"
+        android:contentDescription="rope skipping"
+        />
 
     <TextView
         android:id="@+id/hr"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="Start"
         android:gravity="center"
-        android:textSize="12sp"
+        android:textSize="50sp"
+        android:layout_marginBottom="20dp"
         />
 
-</LinearLayout>
+    <ImageView
+        android:id="@+id/stop"
+        android:layout_gravity="bottom | center"
+        android:layout_height="50dp"
+        android:layout_width="50dp"
+        android:src="@drawable/stop_icon"
+        android:background="@color/red"
+        android:layout_marginBottom="10dp"
+        android:contentDescription="stop button"
+        />
+
+</FrameLayout>

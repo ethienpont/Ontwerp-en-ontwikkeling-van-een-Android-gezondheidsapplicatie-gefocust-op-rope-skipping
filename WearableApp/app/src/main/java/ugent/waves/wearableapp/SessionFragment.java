@@ -32,7 +32,17 @@ public class SessionFragment extends Fragment {
             @Override
             public void onClick(View v)
             {
-                ((SessionActivity)getActivity()).startSession();
+                ((SessionActivity)getActivity()).showDialog();
+            }
+        });
+
+        ImageView signOut = (ImageView) view.findViewById(R.id.sign_out);
+        signOut.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                ((SessionActivity)getActivity()).signOut();
             }
         });
         // Inflate the layout for this fragment
