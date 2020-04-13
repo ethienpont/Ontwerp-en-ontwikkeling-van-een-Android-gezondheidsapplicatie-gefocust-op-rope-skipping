@@ -265,7 +265,6 @@ public class LoginActivity extends Activity implements View.OnClickListener {
     }
 
 
-    //TODO: security rules so users can only access their own data
     private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
         /*
         Log.e(TAG, "firebaseAuthWithGoogle:" + acct.getIdToken());

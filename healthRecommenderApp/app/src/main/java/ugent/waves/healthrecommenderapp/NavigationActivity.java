@@ -275,7 +275,6 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
         //**add this line**
         int requestID = (int) System.currentTimeMillis();
 
-        //TODO: activiteit om sessie te starten
         //TODO: check flags
         Intent intent = new Intent(getApplicationContext(), StartSessionActivity.class);
         intent.putExtra(ACTIVITY_ID, activityId);

@@ -137,7 +137,6 @@ public class wearableService extends WearableListenerService {
             }
             //check for duplicate datapoints
             //dezelfde accelerometer waarde wordt kort na elkaar soms meerdere keren gesampled, dus kijken nr tijd werkt niet
-            //TODO: check of door deleten van samples, samplingfreq wel nog ok is
             if(session_accelerometer.get("x").size() == 0 || session_accelerometer.get("x").get(session_accelerometer.get("x").size()-1) != dst[1]){
                 double delta;
                 if(session_accelerometer.get("x").size() == 0){

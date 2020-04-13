@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import androidx.work.WorkerParameters;
+import ugent.waves.healthrecommenderapp.Enums.JumpMoves;
 import ugent.waves.healthrecommenderapp.Persistance.ActivityDao;
 import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
 import ugent.waves.healthrecommenderapp.Persistance.Mistake;
@@ -97,6 +98,7 @@ public class goalHandler {//extends Worker {
     }
 
     //TODO: wat doen met data ouder dan 10 weken (activiteiten, sessions)?
+    //TODO: test act per sessie
     public void generateRecommendations(){
         try {
             //TODO: door async niet ok??
@@ -111,6 +113,7 @@ public class goalHandler {//extends Worker {
 
             //Count
             Map<Integer, Integer> activity_count = new HashMap<>();
+            Map<Integer, Integer> previous_session_id = new HashMap<>();
             //duration
             Map<Integer, Long> activity_duration = new HashMap<>();
             //mets
@@ -120,7 +123,11 @@ public class goalHandler {//extends Worker {
                 if(!activity_count.containsKey(sa.getActivity())){
                     activity_count.put(sa.getActivity(), 0);
                 }
-                activity_count.put(sa.getActivity(), activity_count.get(sa.getActivity()) + 1);
+                //tel hoeveel keer act voorkomt in sessies
+                if(!previous_session_id.containsKey(sa.getActivity()) || previous_session_id.get(sa.getActivity()) != sa.getSessionId()){
+                    activity_count.put(sa.getActivity(), activity_count.get(sa.getActivity()) + 1);
+                }
+                previous_session_id.put(sa.getActivity(), sa.getSessionId());
 
                 //sum duration
                 if(!activity_duration.containsKey(sa.getActivity())){
@@ -154,6 +161,18 @@ public class goalHandler {//extends Worker {
             //1 keer gewichten berekenen
             Map<Integer, Integer> weights = calculateWeights(mistakes, activity_count);
 
+            JumpMoves[] j = JumpMoves.values();
+
+            //als niet alle activiteiten aanwezig zijn
+            if(weights.size() != j.length){
+                for(JumpMoves m: j){
+                    if(!weights.containsKey(m.getValue())){
+                        //geef default gewicht 1
+                        weights.put(m.getValue(), 1);
+                    }
+                }
+            }
+
             int totalWeight = 0;
             for (int i : weights.keySet()) {
                 totalWeight += weights.get(i);
@@ -162,11 +181,7 @@ public class goalHandler {//extends Worker {
             //recommendations
             double recommendedMets = 0;
 
-            //TODO: recommendations opvragen die niet done of pending zijn en daar willekeurig 1 uit kiezen -> number weg
-            //recommendations nummeren zodat 1 willekeurige kan opgevraagd worden uit de db
-            int number = 0;
-
-            //TODO: wat als nog geen activiteiten
+            //TODO: wat als nog geen activiteiten: gewicht 1 -> TESTEN
             //TODO: met goal uit app
             while(recommendedMets < 300){
                 int act = getRecommendedActivity(weights, totalWeight);
@@ -179,14 +194,12 @@ public class goalHandler {//extends Worker {
                 r.setActivity(act);
                 r.setDuration(activity_mean_duration.get(act));
                 r.setMets(mets);
-                r.setNr(number);
                 r.setPending(false);
                 r.setDone(false);
 
                 AsyncTask.execute(() -> appDb.recommendationDao().insertRecommendation(r));
 
                 recommendedMets += mets;
-                number++;
             }
 
         } catch (ExecutionException e) {

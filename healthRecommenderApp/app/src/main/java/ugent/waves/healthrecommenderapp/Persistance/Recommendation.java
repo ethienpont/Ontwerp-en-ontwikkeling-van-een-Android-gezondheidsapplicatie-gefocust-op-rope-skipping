@@ -24,9 +24,6 @@ public class Recommendation {
     @ColumnInfo(name = "pending")
     private boolean pending;
 
-    @ColumnInfo(name = "nr")
-    private int nr;
-
     @ColumnInfo(name = "done")
     private boolean done;
 
@@ -68,14 +65,6 @@ public class Recommendation {
 
     public void setPending(boolean pending) {
         this.pending = pending;
-    }
-
-    public int getNr() {
-        return nr;
-    }
-
-    public void setNr(int nr) {
-        this.nr = nr;
     }
 
     public boolean isDone() {

@@ -51,7 +51,6 @@ public class StartSessionActivity extends AppCompatActivity {
     }
 
     public void startSession(View view) {
-        //TODO: set recommendation on pending
         try {
             Recommendation r = new RecommendationAsyncTask(this, app.getAppDb(), recommendationId).execute().get();
             r.setPending(true);
@@ -59,6 +58,7 @@ public class StartSessionActivity extends AppCompatActivity {
                     () -> {app.getAppDb().recommendationDao().updateRecommendation(r);}
             );
 
+            //TODO: choose node to connect too
             nodeClient.getConnectedNodes()
                     .addOnSuccessListener(new OnSuccessListener<List<Node>>() {
                         @Override
