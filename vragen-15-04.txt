@@ -1,0 +1,24 @@
+WEARABLESERVICE
+	data layer api: elk sample sturen
+
+RECOMMENDATION
+	aantal sessies met act
+	fouten per act
+	--> gewicht bij random kiezen
+	
+	gem aantal mets
+	gem duur
+	--> recommendation generen tot goal bereikt
+
+EVALUATIE
+	2 weken hiervoor
+
+NIEUWIGHEID
+	slapen/stress
+
+MACHINE LEARNING
+	algoritmes vergelijken
+	forward/backward 180: overgangen model slechter?
+	mistakes: mag unbalanced?
+	extra proefpersonen?
+	per proefpersoon ook balanceren?

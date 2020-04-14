@@ -11,6 +11,8 @@ import java.lang.ref.WeakReference;
 import java.util.concurrent.ExecutionException;
 
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import ugent.waves.healthrecommenderapp.Persistance.ActivityDao;
 import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
 import ugent.waves.healthrecommenderapp.Persistance.Mistake;
@@ -40,9 +42,22 @@ public class SessionHistoryFragment extends Fragment {
     private healthRecommenderApplication app;
 
     private AppDatabase appDb;
+    private RecyclerView recyclerView;
+    private LinearLayoutManager layoutManager;
+    private TimelineRecyclerAdapter timelineRecyclerAdapter;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+
+        View view = inflater.inflate(R.layout.session_history_fragment, container, false);
+
+        recyclerView = (RecyclerView) view.findViewById(R.id.recycler_view);
+
+        recyclerView.setHasFixedSize(true);
+
+        layoutManager = new LinearLayoutManager(getContext());
+        recyclerView.setLayoutManager(layoutManager);
+
         app = (healthRecommenderApplication) getContext().getApplicationContext();
 
         appDb = app.getAppDb();
@@ -55,10 +70,36 @@ public class SessionHistoryFragment extends Fragment {
         //View view = binding.getRoot();
         //binding.setSessionData(data);
 
-        View view = inflater.inflate(R.layout.session_history_fragment, container, false);
+        timelineRecyclerAdapter = initTimelineData();
+
+        recyclerView.setAdapter(timelineRecyclerAdapter);
 
         return view;
+    }
 
+    private TimelineRecyclerAdapter initTimelineData(){
+        TimelineRecyclerAdapter timeline = new TimelineRecyclerAdapter();
+
+        try {
+            SessionActivity[] a = new ActivityAsyncTask(getActivity(), appDb, id).execute().get();
+
+            ActivityItem item = new ActivityItem(a[0].getStart().toString(), a[0].getEnd().toString(), a[0].getActivity());
+            timeline.addActivity(item);
+
+            for(SessionActivity sa: a){
+                ActivityItem activityItem = new ActivityItem(sa.getStart().toString(), sa.getEnd().toString(), sa.getActivity());
+
+                timeline.addTimepoint(new TimePoint("point", "des"));
+                timeline.addActivity(activityItem);
+
+            }
+
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return timeline;
     }
 
     //TODO: hoeveel minuten gedaan van elke beweging?

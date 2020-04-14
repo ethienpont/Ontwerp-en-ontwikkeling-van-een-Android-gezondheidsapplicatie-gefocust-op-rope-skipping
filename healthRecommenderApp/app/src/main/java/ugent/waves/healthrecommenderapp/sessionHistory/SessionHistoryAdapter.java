@@ -11,10 +11,10 @@ import android.widget.TextView;
 import java.util.List;
 
 import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.RecyclerView.ViewHolder;
 import androidx.recyclerview.widget.RecyclerView.Adapter;
+import androidx.recyclerview.widget.RecyclerView.ViewHolder;
+import ugent.waves.healthrecommenderapp.NavigationActivity;
 import ugent.waves.healthrecommenderapp.R;
-import ugent.waves.healthrecommenderapp.SessionHistoryActivity;
 import ugent.waves.healthrecommenderapp.dataclasses.SessionHistoryData;
 
 public class SessionHistoryAdapter extends Adapter<SessionHistoryAdapter.SessionViewHolder> {
@@ -74,14 +74,12 @@ public class SessionHistoryAdapter extends Adapter<SessionHistoryAdapter.Session
 
     private void fragmentJump(SessionHistoryData mItemSelected) {
         mFragment = SessionHistoryFragment.newInstance(mItemSelected.getSessionId());
-        switchContent(R.id.container, mFragment);
+        switchContent(R.id.flContent, mFragment);
     }
 
     public void switchContent(int id, Fragment fragment) {
-        if (context == null)
-            return;
-        if (context instanceof SessionHistoryActivity) {
-            SessionHistoryActivity activity = (SessionHistoryActivity) context;
+        if (context instanceof NavigationActivity) {
+            NavigationActivity activity = (NavigationActivity) context;
             activity.switchContent(id, fragment);
         }
 

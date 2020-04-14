@@ -191,8 +191,7 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
         }
 
         // Insert the fragment by replacing any existing fragment
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        fragmentManager.beginTransaction().replace(R.id.flContent, fragment).commit();
+        switchContent(R.id.flContent, fragment);
 
         // Highlight the selected item has been done by NavigationView
         menuItem.setChecked(true);
@@ -200,6 +199,11 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
         setTitle(menuItem.getTitle());
         // Close the navigation drawer
         mDrawer.closeDrawers();
+    }
+
+    public void switchContent(int id, Fragment f) {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        fragmentManager.beginTransaction().replace(id, f).commit();
     }
 
     private void initActivityDetection(){

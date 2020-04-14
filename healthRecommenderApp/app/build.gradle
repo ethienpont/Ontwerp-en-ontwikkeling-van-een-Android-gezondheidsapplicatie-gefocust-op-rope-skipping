@@ -94,4 +94,6 @@ dependencies {
     implementation 'com.squareup.picasso:picasso:2.71828'
     implementation 'com.google.api-client:google-api-client-android:1.30.0'
     implementation 'com.google.apis:google-api-services-people:v1-rev506-1.25.0'
+
+    implementation 'pl.hypeapp:materialtimelineview:1.1'
 }
