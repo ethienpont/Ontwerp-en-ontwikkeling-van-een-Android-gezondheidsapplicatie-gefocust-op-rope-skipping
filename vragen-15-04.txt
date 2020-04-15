@@ -10,11 +10,11 @@ RECOMMENDATION
 	gem duur
 	--> recommendation generen tot goal bereikt
 
-EVALUATIE
-	2 weken hiervoor
+ACTIVITY TRANSITIONS
 
-NIEUWIGHEID
-	slapen/stress
+
+SNOOZE FUNCTIONALITEIT
+	in voorbije 10 weken een bepaald aantal -> geen recommendation meer in dat uur
 
 MACHINE LEARNING
 	algoritmes vergelijken
@@ -22,3 +22,18 @@ MACHINE LEARNING
 	mistakes: mag unbalanced?
 	extra proefpersonen?
 	per proefpersoon ook balanceren?
+
+EVALUATIE
+	2 weken hiervoor
+
+NIEUWIGHEID
+	slapen/stress
+
+wekka framework
+hartslag 
+alles opslaan: accelerometer, hartslag
+batches
+fouten detecteren via afgeleide
+
+kijken of model beter werkt aan slechts 1 kant
+
