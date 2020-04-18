@@ -1,5 +1,6 @@
 package ugent.waves.wearableapp;
 
+import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -56,6 +57,11 @@ public class HeartRateDisplayFragment extends Fragment {
     //TODO: als boven 220-age komt -> rood + melding
     public void showHeartRate(float hr){
         t.setText((int) hr+"");
+        if(hr > 90){
+            t.setTextColor(Color.RED);
+        } else{
+            t.setTextColor(Color.WHITE);
+        }
     }
 
 }

@@ -29,6 +29,8 @@ EVALUATIE
 NIEUWIGHEID
 	slapen/stress
 
+
+
 wekka framework
 hartslag 
 alles opslaan: accelerometer, hartslag
@@ -37,3 +39,7 @@ fouten detecteren via afgeleide
 
 kijken of model beter werkt aan slechts 1 kant
 
+TODO:   stilzitten tonen
+	permissies
+	fouten detecteren via afgeleide
+	alles opslaan: accelerometer, hartslag

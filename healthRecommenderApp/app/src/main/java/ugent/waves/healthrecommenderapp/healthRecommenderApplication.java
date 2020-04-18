@@ -12,8 +12,8 @@ import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
 public class healthRecommenderApplication extends Application {
 
     //TODO: iedere week resetten
-    private int weeknr;
-    private int goal;
+    private int weeknr = 0;
+    private int goal = 600;
 
     private long timeStill;
     private long startStill;

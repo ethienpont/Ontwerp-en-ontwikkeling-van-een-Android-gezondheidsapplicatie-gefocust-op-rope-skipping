@@ -30,6 +30,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
@@ -39,6 +40,8 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
 import ugent.waves.healthrecommenderapp.HelpClasses.goalHandler;
 import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
 import ugent.waves.healthrecommenderapp.Persistance.Recommendation;
@@ -108,6 +111,11 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
         /*
         APP INITIALISATION
          */
+
+        //TODO: waar aanroepen + elke dag ipv week
+        PeriodicWorkRequest work = new PeriodicWorkRequest.Builder(goalHandler.class, 1, TimeUnit.DAYS).build();
+        WorkManager.getInstance(this).enqueue(work);
+
         Class fragmentClass = SessionHistoryListFragment.class;
         try {
             Fragment fragment = (Fragment) fragmentClass.newInstance();

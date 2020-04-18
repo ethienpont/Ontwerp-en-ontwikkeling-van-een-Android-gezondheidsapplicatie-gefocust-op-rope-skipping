@@ -1,6 +1,7 @@
 package ugent.waves.healthrecommenderapp.Services;
 
 import android.content.SharedPreferences;
+import android.util.Log;
 
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.WearableListenerService;
@@ -135,24 +136,12 @@ public class wearableService extends WearableListenerService {
                 session_accelerometer.put("y", new ArrayList<>());
                 session_accelerometer.put("z", new ArrayList<>());
             }
-            //check for duplicate datapoints
-            //dezelfde accelerometer waarde wordt kort na elkaar soms meerdere keren gesampled, dus kijken nr tijd werkt niet
-            if(session_accelerometer.get("x").size() == 0 || session_accelerometer.get("x").get(session_accelerometer.get("x").size()-1) != dst[1]){
-                double delta;
-                if(session_accelerometer.get("x").size() == 0){
-                    delta = 0;
-                } else{
-                    delta = floatToTimeDouble(session_accelerometer.get("time").get(0), dst[0]);
-                }
-                try{
-                    session_accelerometer.get("time_delta").add((float)delta);
-                } catch(Exception e){
-                    e.printStackTrace();
-                }
-                session_accelerometer.get("time").add(dst[0]);
-                session_accelerometer.get("x").add(dst[1]);
-                session_accelerometer.get("y").add(dst[2]);
-                session_accelerometer.get("z").add(dst[3]);
+            
+            for(int i=0; i < dst.length; i = i+4){
+                session_accelerometer.get("time").add(dst[i]);
+                session_accelerometer.get("x").add(dst[i+1]);
+                session_accelerometer.get("y").add(dst[i+2]);
+                session_accelerometer.get("z").add(dst[i+3]);
             }
         }
 
@@ -166,26 +155,76 @@ public class wearableService extends WearableListenerService {
                 session_heartbeat.put("time", new ArrayList<>());
                 session_heartbeat.put("HR", new ArrayList<>());
             }
-            //check for duplicate datapoints
-            if(session_heartbeat.get("time").size() == 0 || session_heartbeat.get("time").get(session_heartbeat.get("time").size()-1) != dst[0]){
-                session_heartbeat.get("time").add(dst[0]);
-                session_heartbeat.get("HR").add(dst[1]);
+
+            for(int i=0; i < dst.length; i = i+2){
+                session_heartbeat.get("time").add(dst[i]);
+                session_heartbeat.get("HR").add(dst[i+1]);
             }
         }
         else if(messageEvent.getPath().equalsIgnoreCase(STOP)){
-            //als minstens 1 segment kan gemaakt worden
-            if(session_accelerometer.get("x").size() > 52){
-                try  {
-                    normalization();
-                    output = getActivityPredictions();
-                    trantitions = get_trantitions();
-                    calculateSessionData();
-                } catch(Exception e){
-                    e.printStackTrace();
+            //TODO: heartbeat soms null soms niet???
+            if(session_heartbeat.get("time").size() > 0){
+                //als minstens 1 segment kan gemaakt worden
+                if(session_accelerometer.get("x").size() > 52){
+                    try  {
+                        checkDuplicates();
+                        normalization();
+                        output = getActivityPredictions();
+                        trantitions = get_trantitions();
+                        calculateSessionData();
+                    } catch(Exception e){
+                        e.printStackTrace();
 
+                    }
                 }
+            } else{
+                //TODO: geen hartslag
             }
         }
+    }
+    
+    private void checkDuplicates(){
+        Map<String, List<Float>> session_accelerometer_preprocessed = new HashMap<>();
+        session_accelerometer_preprocessed.put("time", new ArrayList<>());
+        session_accelerometer_preprocessed.put("time_delta", new ArrayList<>());
+        session_accelerometer_preprocessed.put("x", new ArrayList<>());
+        session_accelerometer_preprocessed.put("y", new ArrayList<>());
+        session_accelerometer_preprocessed.put("z", new ArrayList<>());
+
+        session_accelerometer_preprocessed.get("time").add(session_accelerometer.get("time").get(0));
+        session_accelerometer_preprocessed.get("x").add(session_accelerometer.get("x").get(0));
+        session_accelerometer_preprocessed.get("y").add(session_accelerometer.get("y").get(0));
+        session_accelerometer_preprocessed.get("z").add(session_accelerometer.get("z").get(0));
+        session_accelerometer_preprocessed.get("time_delta").add((float) 0);
+
+        for(int i=1; i < session_accelerometer.get("time").size(); i++){
+            if(!session_accelerometer.get("time").get(i).equals(session_accelerometer.get("time").get(i-1))){
+                double delta = floatToTimeDouble(session_accelerometer_preprocessed.get("time").get(0), session_accelerometer.get("time").get(i));
+
+                session_accelerometer_preprocessed.get("time").add(session_accelerometer.get("time").get(i));
+                session_accelerometer_preprocessed.get("x").add(session_accelerometer.get("x").get(i));
+                session_accelerometer_preprocessed.get("y").add(session_accelerometer.get("y").get(i));
+                session_accelerometer_preprocessed.get("z").add(session_accelerometer.get("z").get(i));
+                session_accelerometer_preprocessed.get("time_delta").add((float) delta);
+            }
+        }
+
+        Map<String, List<Float>> session_heartbeat_preprocessed = new HashMap<>();
+        session_heartbeat_preprocessed.put("time", new ArrayList<>());
+        session_heartbeat_preprocessed.put("HR", new ArrayList<>());
+
+        session_heartbeat_preprocessed.get("time").add(session_heartbeat.get("time").get(0));
+        session_heartbeat_preprocessed.get("HR").add(session_heartbeat.get("HR").get(0));
+
+        for(int i=1; i < session_heartbeat.get("time").size(); i++){
+            if(!session_heartbeat.get("time").get(i).equals(session_heartbeat.get("time").get(i-1))){
+                session_heartbeat_preprocessed.get("time").add(session_heartbeat.get("time").get(i));
+                session_heartbeat_preprocessed.get("HR").add(session_heartbeat.get("HR").get(i));
+            }
+        }
+        session_accelerometer = session_accelerometer_preprocessed;
+        session_heartbeat = session_heartbeat_preprocessed;
+        Log.d("","");
     }
 
     private void calculateSessionData(){
@@ -607,8 +646,9 @@ public class wearableService extends WearableListenerService {
     //TODO: check
     //SECONDEN
     private double floatToTimeDouble(float time1,float time2) {
+        float verschil = (time2 - time1);
         //seconden
-        long timedelta_seconden = (long) (time2 - time1)/1000000000;
+        long timedelta_seconden = (long) verschil/1000000000;
 
         return timedelta_seconden;
     }

@@ -4,6 +4,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
@@ -15,6 +17,10 @@ import androidx.wear.ambient.AmbientModeSupport;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -25,7 +31,9 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.media.RingtoneManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.wearable.activity.WearableActivity;
@@ -112,6 +120,9 @@ public class SessionActivity extends AppCompatActivity implements SensorEventLis
     private String HEARTRATE = "/HEARTRATE";
     private HeartRateDisplayFragment displayFragment;
     private wearableAppApplication app;
+
+    private List<Byte> samples_accelerometer;
+    private List<Byte> samples_heartbeat;
 
     private Node nodeChosen;
 
@@ -261,29 +272,82 @@ public class SessionActivity extends AppCompatActivity implements SensorEventLis
         switchContent(R.id.container, f);
     }
 
+    //TODO: test batch grootte
     @Override
     public void onSensorChanged(final SensorEvent event) {
+        //TODO: leeftijd
+        if(event.values[0] > 70){
+            sendAlarm();
+        }
+
         if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
-            messageClient.sendMessage(nodeChosen.getId(),ACCELEROMETER, FloatArray2ByteArray(event.values, System.nanoTime()))
-                                        .addOnSuccessListener(new OnSuccessListener<Integer>() {
-                                            @Override
-                                            public void onSuccess(Integer integer) {
-                                                //gelukt
-                                            }
-                                        });
-            //TODO: heartbeat constant 0???
+            if(samples_accelerometer == null){
+                samples_accelerometer = new ArrayList<>();
+            } else if(samples_accelerometer.size() == (104*4)){
+                messageClient.sendMessage(nodeChosen.getId(),ACCELEROMETER, toByteArray(samples_accelerometer))
+                        .addOnSuccessListener(new OnSuccessListener<Integer>() {
+                            @Override
+                            public void onSuccess(Integer integer) {
+                            }
+                        });
+                samples_accelerometer = null;
+            }else{
+                for(byte b: FloatArray2ByteArray(event.values, System.nanoTime())){
+                    samples_accelerometer.add(b);
+                }
+            }
+
         } else if(event.sensor.getType() == Sensor.TYPE_HEART_RATE){
             if (displayFragment.isAdded() && displayFragment.isVisible() && displayFragment.getUserVisibleHint()) {
                 displayFragment.showHeartRate(event.values[0]);
             }
-            messageClient.sendMessage(nodeChosen.getId(),HEARTRATE, FloatArray2ByteArray(event.values, System.nanoTime()))
-                                        .addOnSuccessListener(new OnSuccessListener<Integer>() {
-                                            @Override
-                                            public void onSuccess(Integer integer) {
-                                                //gelukt
-                                            }
-                                        });
+
+            if(samples_heartbeat == null){
+                samples_heartbeat = new ArrayList<>();
+            } else if(samples_heartbeat.size() == (52*2)){
+                messageClient.sendMessage(nodeChosen.getId(),HEARTRATE, toByteArray(samples_heartbeat))
+                        .addOnSuccessListener(new OnSuccessListener<Integer>() {
+                            @Override
+                            public void onSuccess(Integer integer) {
+                            }
+                        });
+                samples_heartbeat = null;
+            }else{
+                for(byte b: FloatArray2ByteArray(event.values, System.nanoTime())){
+                    samples_heartbeat.add(b);
+                }
+            }
         }
+    }
+
+    //TODO: vibrate
+    private void sendAlarm() {
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        NotificationChannel mChannel = new NotificationChannel("channel", "yourSubjectName",NotificationManager.IMPORTANCE_HIGH);
+
+        notificationManager.createNotificationChannel(mChannel);
+
+        NotificationCompat.Builder b = new NotificationCompat.Builder(this, mChannel.getId());
+
+        //FIX android O bug Notification add setChannelId("shipnow-message")
+        b.setSmallIcon(R.drawable.stop_icon) // vector (doesn't work with png as well)
+                .setContentTitle("get")
+                .setContentText("test")
+                .setChannelId(mChannel.getId())
+                .setDefaults(Notification.DEFAULT_ALL)
+                .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION));
+
+        notificationManager.notify(0, b.build());
+    }
+
+    private byte[] toByteArray(List<Byte> samples_accelerometer) {
+        byte[] byteArray = new byte[samples_accelerometer.size()];
+        int i = 0;
+        for(Byte b: samples_accelerometer){
+            byteArray[i] = b.byteValue();
+            i++;
+        }
+        return byteArray;
     }
 
     public void signOut(){
