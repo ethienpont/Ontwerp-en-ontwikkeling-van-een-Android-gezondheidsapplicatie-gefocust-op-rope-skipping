@@ -32,7 +32,6 @@ public class SessionHistoryListFragment extends Fragment {
     private healthRecommenderApplication app;
 
 
-    //TODO: visualiseer activiteiten
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         //recyclerview

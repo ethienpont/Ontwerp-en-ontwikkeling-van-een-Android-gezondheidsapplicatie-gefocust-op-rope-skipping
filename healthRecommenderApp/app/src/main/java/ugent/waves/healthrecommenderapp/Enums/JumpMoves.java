@@ -21,6 +21,23 @@ public enum JumpMoves {
         throw new IllegalArgumentException("Jump Not found");
     }
 
+    public static String getJumpName(int i) {
+        if(i == 0){
+            return "Jump fast";
+        } else if(i == 1){
+            return "Jump slow";
+        } else if(i == 2){
+            return "Side swing";
+        } else if(i == 3){
+            return "Forward 180";
+        } else if(i == 4){
+            return "Cross over";
+        } else if(i == 5){
+            return "Mistake";
+        }
+        return "Other";
+    }
+
     public int getValue() {
         return jumpIndex;
     }

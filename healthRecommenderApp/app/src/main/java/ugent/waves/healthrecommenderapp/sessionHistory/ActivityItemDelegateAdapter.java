@@ -6,6 +6,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
+import ugent.waves.healthrecommenderapp.Enums.JumpMoves;
 import ugent.waves.healthrecommenderapp.R;
 
 public class ActivityItemDelegateAdapter implements ViewTypeDelegateAdapter{
@@ -27,7 +28,7 @@ public class ActivityItemDelegateAdapter implements ViewTypeDelegateAdapter{
                 ActivityItem t = (ActivityItem) item;
                 activityHolder.start.setText(t.getStart());
                 activityHolder.end.setText(t.getEnd());
-                activityHolder.date.setText(t.getActivity());
+                activityHolder.date.setText(JumpMoves.getJumpName(t.getActivity()));
                 activityHolder.mets.setText(t.getMets()+"");
             }catch (Exception e){
                 e.printStackTrace();

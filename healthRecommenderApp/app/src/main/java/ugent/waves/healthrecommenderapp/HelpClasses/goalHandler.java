@@ -139,25 +139,28 @@ public class goalHandler extends Worker {
             Map<Integer, Double> activity_mets = new HashMap<>();
 
             for(SessionActivity sa: activities){
-                if(!activity_count.containsKey(sa.getActivity())){
-                    activity_count.put(sa.getActivity(), 0);
-                }
-                //tel hoeveel keer act voorkomt in sessies
-                if(!previous_session_id.containsKey(sa.getActivity()) || previous_session_id.get(sa.getActivity()) != sa.getSessionId()){
-                    activity_count.put(sa.getActivity(), activity_count.get(sa.getActivity()) + 1);
-                }
-                previous_session_id.put(sa.getActivity(), sa.getSessionId());
+                //als er geen hartslagdata, wordt act niet meegerekend
+                if(sa.getMET_score() != -1){
+                    if(!activity_count.containsKey(sa.getActivity())){
+                        activity_count.put(sa.getActivity(), 0);
+                    }
+                    //tel hoeveel keer act voorkomt in sessies
+                    if(!previous_session_id.containsKey(sa.getActivity()) || previous_session_id.get(sa.getActivity()) != sa.getSessionId()){
+                        activity_count.put(sa.getActivity(), activity_count.get(sa.getActivity()) + 1);
+                    }
+                    previous_session_id.put(sa.getActivity(), sa.getSessionId());
 
-                //sum duration
-                if(!activity_duration.containsKey(sa.getActivity())){
-                    activity_duration.put(sa.getActivity(), (long) 0);
+                    //sum duration
+                    if(!activity_duration.containsKey(sa.getActivity())){
+                        activity_duration.put(sa.getActivity(), (long) 0);
+                    }
+                    //sum mets
+                    if(!activity_mets.containsKey(sa.getActivity())){
+                        activity_mets.put(sa.getActivity(), (double) 0);
+                    }
+                    activity_duration.put(sa.getActivity(), activity_duration.get(sa.getActivity()) + (sa.getEnd()-sa.getStart()));
+                    activity_mets.put(sa.getActivity(), activity_mets.get(sa.getActivity()) + sa.getMET_score());
                 }
-                //sum mets
-                if(!activity_mets.containsKey(sa.getActivity())){
-                    activity_mets.put(sa.getActivity(), (double) 0);
-                }
-                activity_duration.put(sa.getActivity(), activity_duration.get(sa.getActivity()) + (sa.getEnd()-sa.getStart()));
-                activity_mets.put(sa.getActivity(), activity_mets.get(sa.getActivity()) + sa.getMET_score());
             }
 
             //metsPerMin

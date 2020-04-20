@@ -144,16 +144,14 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
             TextView mName = (TextView) nvDrawer.getHeaderView(0).findViewById(R.id.email);
             ImageView mImageView = (ImageView) nvDrawer.getHeaderView(0).findViewById(R.id.circleImage);
 
+            //TODO: account was null???
             mName.setText(app.getAccount().getEmail());
             Picasso.get().load(app.getAccount().getPhotoUrl()).into(mImageView);
         }
 
         registerReceiver(broadcast_receiver, new IntentFilter("SEND_NOTIFICATION"));
 
-        //goalHandler g = new goalHandler(null, this, app);
-
-        //g.generateRecommendations();
-        //sendRecommendation();
+        initActivityDetection();
 
     }
 

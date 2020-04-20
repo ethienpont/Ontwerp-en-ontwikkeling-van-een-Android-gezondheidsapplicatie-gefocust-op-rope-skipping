@@ -39,6 +39,6 @@ fouten detecteren via afgeleide
 
 kijken of model beter werkt aan slechts 1 kant
 
-TODO:   permissies
-	fouten detecteren via afgeleide
+TODO:   age
+	activiteiten met met score 0 (-1)
 	alles opslaan: accelerometer, hartslag

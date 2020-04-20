@@ -21,7 +21,7 @@ import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
 import ugent.waves.healthrecommenderapp.Persistance.Recommendation;
 import ugent.waves.healthrecommenderapp.Persistance.RecommendationDao;
 
-public class StartSessionActivity extends AppCompatActivity {
+public class StartSessionActivity extends AppCompatActivity implements NodeAdapter.RecyclerViewItemClickListener {
     private static final String ACTIVITY_ID = "ACTIVITY_ID";
     private static final String RECOMMENDATION_ID = "RECOMMENDATION_ID";
     private String PATH = "/SESSION_START";
@@ -30,6 +30,7 @@ public class StartSessionActivity extends AppCompatActivity {
     private healthRecommenderApplication app;
     private NodeClient nodeClient;
     private MessageClient messageClient;
+    private NodeDialog nodeDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +38,7 @@ public class StartSessionActivity extends AppCompatActivity {
         setContentView(R.layout.activity_start_session);
 
         app = (healthRecommenderApplication) getApplicationContext();
+        app.setContext(this);
         nodeClient = Wearable.getNodeClient(this);
         messageClient = Wearable.getMessageClient(this);
 
@@ -58,19 +60,18 @@ public class StartSessionActivity extends AppCompatActivity {
                     () -> {app.getAppDb().recommendationDao().updateRecommendation(r);}
             );
 
-            //TODO: choose node to connect too
             nodeClient.getConnectedNodes()
                     .addOnSuccessListener(new OnSuccessListener<List<Node>>() {
                         @Override
                         public void onSuccess(List<Node> nodes) {
-                            for(Node node : nodes) {
-                                messageClient.sendMessage(node.getId(), PATH, new byte[]{})
-                                        .addOnSuccessListener(new OnSuccessListener<Integer>() {
-                                            @Override
-                                            public void onSuccess(Integer integer) {
-                                                //gelukt
-                                            }
-                                        });
+                            try{
+                                NodeAdapter dataAdapter = new NodeAdapter(nodes, (StartSessionActivity) app.getContext());
+                                nodeDialog = new NodeDialog(StartSessionActivity.this, dataAdapter);
+
+                                nodeDialog.show();
+                                //nodeDialog.setCanceledOnTouchOutside(false);
+                            } catch(Exception e){
+                                e.printStackTrace();
                             }
                         }
                     });
@@ -82,8 +83,19 @@ public class StartSessionActivity extends AppCompatActivity {
         }
     }
 
-    private void sendMessage(){
+    @Override
+    public void clickOnItem(Node node) {
+        messageClient.sendMessage(node.getId(), PATH, new byte[]{})
+                .addOnSuccessListener(new OnSuccessListener<Integer>() {
+                    @Override
+                    public void onSuccess(Integer integer) {
+                        //gelukt
+                    }
+                });
 
+        if (nodeDialog != null){
+            nodeDialog.dismiss();
+        }
     }
 
     private static class RecommendationAsyncTask extends AsyncTask<Void, Void, Recommendation> {

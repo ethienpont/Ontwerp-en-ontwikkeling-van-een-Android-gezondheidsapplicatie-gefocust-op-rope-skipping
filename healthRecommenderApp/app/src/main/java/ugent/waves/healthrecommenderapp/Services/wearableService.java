@@ -35,7 +35,6 @@ import ugent.waves.healthrecommenderapp.healthRecommenderApplication;
 
 //TODO: structurize
 //TODO: works met debugger, niet zonder
-//TODO: toon connected device
 public class wearableService extends WearableListenerService {
 
     private List<JumpMoves> output;
@@ -86,8 +85,6 @@ public class wearableService extends WearableListenerService {
         app = (healthRecommenderApplication) this.getApplicationContext();
         SharedPreferences sharedPref = getSharedPreferences(app.getAccount().getId(), MODE_PRIVATE);
 
-        //TODO: initialise weeknr 0 bij eerste opstart
-        app.setWeeknr(0);
 
         //TODO: get age from account (via shared pref mss of get profile in loginact)
         //this.MAXHR = app.getAccount().getRequestedScopes()
@@ -95,7 +92,6 @@ public class wearableService extends WearableListenerService {
         String bmonth = sharedPref.getString("bmonth", "");
         String byear = sharedPref.getString("byear", "");
 
-        //TODO: parameters bepalen
         filters = new HashMap<>();
         filters.put(JumpMoves.SLOW, new SavGolFilter(25, 25, 3));
         filters.put(JumpMoves.FAST, new SavGolFilter(16, 16, 5));
@@ -121,7 +117,7 @@ public class wearableService extends WearableListenerService {
             session_heartbeat.put("HR", new ArrayList<>());
 
         }
-        //TODO: eerste en laatste 3 sec ervan doen?
+        //TODO: eerste en laatste 3 sec ervan doen?: bij predictie -> testen
         else if( messageEvent.getPath().equalsIgnoreCase(ACCELEROMETER) ){
             FloatBuffer values = ByteBuffer.wrap(messageEvent.getData()).asFloatBuffer();
             final float[] dst = new float[values.capacity()];
@@ -177,7 +173,7 @@ public class wearableService extends WearableListenerService {
                     }
                 }
             } else{
-                //TODO: geen hartslag
+                //TODO: alert dat geen hartslag
             }
         }
     }
@@ -226,11 +222,10 @@ public class wearableService extends WearableListenerService {
         Log.d("","");
     }
 
+    //TODO: no mistake in machine learning labels
     private void calculateSessionData(){
         int turns = numberTurns();
-        //TODO: get from app
-        int week = 0;
-        List<Mistake> m = mistakes_ML();
+        List<Mistake> m = mistakesTimestamps_deravative();
 
         s.setWeek(app.getWeeknr());
         s.setTurns(turns);
@@ -246,8 +241,8 @@ public class wearableService extends WearableListenerService {
             if(session_heartbeat.get("HR").size() != 0){
                 met_score = processMETscore(trantitions.get("start").get(i), trantitions.get("end").get(i));
             } else{
-                met_score = 0;
-                //TODO: alert met melding dat geen hartdata
+                //met score -1 als niet kan berekenen
+                met_score = -1;
             }
 
             Long start = (long) Float.parseFloat(String.valueOf(trantitions.get("start").get(i)));
@@ -274,7 +269,7 @@ public class wearableService extends WearableListenerService {
                 a.setStart(start);
                 a.setMET_score(met_score);
                 a.setActivity(act);
-                a.setWeek(week);
+                a.setWeek(app.getWeeknr());
 
                 activities.add(a);
             }
@@ -353,28 +348,37 @@ public class wearableService extends WearableListenerService {
     SESSION CALCULATIONS
      */
 
-    //TODO: met afgeleide
+    private float[] getDeravative(Float[] signal, Float[] time){
+        float[] deravative = new float[signal.length-1];
+        for(int i=1; i < signal.length; i++){
+            deravative[i-1] = (signal[i] - signal[i-1])/(time[i] - time[i-1]);
+        }
+        return deravative;
+    }
+
+    //TODO: tijd mss niet juist door afgeleide te nemen, want verschuift een pt
     //TODO: alle assen bekijken en hier overlapping van nemen
     //als data in alle assen bijna 0 is voor bepaalde duur = mistake
-    private List<Float> mistakesTimestamps_deravative(){
-        List<Float> mistakes = new ArrayList<>();
+    private List<Mistake> mistakesTimestamps_deravative(){
+        float[] d = getDeravative((Float[]) session_accelerometer.get("x").toArray(), (Float[]) session_accelerometer.get("time").toArray());
+        List<Mistake> mistakes = new ArrayList<>();
         double interval_high = 0.5;
         double interval_low = -0.5;
         int start = -1, end;
         int threshold = 6; //aantal datapunten nodig om geclassificeerd te worden als mistake
-        for(int i = 1; i < session_accelerometer.get("x").size(); i++){
+        for(int i = 1; i < d.length; i++){
             //overgang van niet in interval naar wel = start
-            if(
-                    ((session_accelerometer.get("x").get(i) < interval_high && session_accelerometer.get("x").get(i) > interval_low)) && ((session_accelerometer.get("x").get(i-1) > interval_high || session_accelerometer.get("x").get(i-1) < interval_low))
-                    ){
+            if(( (d[i] < interval_high && d[i] > interval_low)) && ((d[i-1] > interval_high || d[i-1] < interval_low)) ){
                 start = i;
             }
             //overgang van in interval naar niet = end
-            if(
-                    ((session_accelerometer.get("x").get(i-1) < interval_high && session_accelerometer.get("x").get(i-1) > interval_low)) && ((session_accelerometer.get("x").get(i) > interval_high || session_accelerometer.get("x").get(i) < interval_low))
-                    ){
+            if( (d[i-1] < interval_high && d[i-1] > interval_low) && (d[i] > interval_high || d[i] < interval_low) ){
                 if(start != -1 && start - i > threshold){
-                    mistakes.add(session_accelerometer.get("time").get(start));
+                    Mistake mis = new Mistake();
+                    mis.setActivity((int) Float.parseFloat(String.valueOf(trantitions.get("activity").get(i-1))));
+                    mis.setTime((int) Float.parseFloat(String.valueOf(trantitions.get("start").get(i))));
+                    mistakes.add(mis);
+                    //mistakes.add(session_accelerometer.get("time").get(start));
                     start = -1;
                 }
             }
