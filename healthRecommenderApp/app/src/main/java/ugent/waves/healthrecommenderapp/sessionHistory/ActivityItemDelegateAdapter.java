@@ -19,6 +19,7 @@ public class ActivityItemDelegateAdapter implements ViewTypeDelegateAdapter{
         }
 
         //TODO: error id not found, maar werkt wel?
+        //TODO: activity to string
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, ViewType item) {
             try{
@@ -27,6 +28,7 @@ public class ActivityItemDelegateAdapter implements ViewTypeDelegateAdapter{
                 activityHolder.start.setText(t.getStart());
                 activityHolder.end.setText(t.getEnd());
                 activityHolder.date.setText(t.getActivity());
+                activityHolder.mets.setText(t.getMets()+"");
             }catch (Exception e){
                 e.printStackTrace();
             }
@@ -36,6 +38,7 @@ public class ActivityItemDelegateAdapter implements ViewTypeDelegateAdapter{
             public TextView date;
             public TextView start;
             public TextView end;
+            public TextView mets;
 
             public ActivityItemViewHolder(View itemView) {
                 super(itemView);
@@ -43,6 +46,7 @@ public class ActivityItemDelegateAdapter implements ViewTypeDelegateAdapter{
                 this.date = (TextView) itemView.findViewById(R.id.date_timeline);
                 this.start = (TextView) itemView.findViewById(R.id.start_timeline);
                 this.end = (TextView) itemView.findViewById(R.id.end_timeline);
+                this.mets = (TextView) itemView.findViewById(R.id.mets_timeline);
             }
         }
 }

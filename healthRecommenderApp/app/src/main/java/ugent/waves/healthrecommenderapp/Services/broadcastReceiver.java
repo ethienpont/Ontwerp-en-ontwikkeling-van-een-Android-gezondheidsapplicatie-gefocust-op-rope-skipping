@@ -58,12 +58,9 @@ public class broadcastReceiver extends BroadcastReceiver {
                     //cumulatief stil zitten
                     app.setTimeStill(app.getTimeStill() + (System.currentTimeMillis() - app.getStartStill()));
 
-                    //als tijd stil gezeten te lang is
+                    //als tijd stil gezeten te lang is en het is een veelvoud van max aantal seconden stilzitten
                     //TODO: correcte waarde voor te lang stilzitten per dag??
-                    //TODO: elke dag time still resetten
-                    if(app.getTimeStill()  > 300){
-                        //zet time still terug op 0
-                        app.setTimeStill(0);
+                    if(app.getTimeStill() % 30000  == 0){
                         //send notification
                         if(checkAvailibility(c.get(Calendar.DAY_OF_WEEK), c.get(Calendar.HOUR))){
                             context.sendBroadcast(new Intent("SEND_NOTIFICATION"));

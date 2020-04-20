@@ -83,11 +83,11 @@ public class SessionHistoryFragment extends Fragment {
         try {
             SessionActivity[] a = new ActivityAsyncTask(getActivity(), appDb, id).execute().get();
 
-            ActivityItem item = new ActivityItem(a[0].getStart().toString(), a[0].getEnd().toString(), a[0].getActivity());
+            ActivityItem item = new ActivityItem(a[0].getStart().toString(), a[0].getEnd().toString(), a[0].getActivity(), a[0].getMET_score());
             timeline.addActivity(item);
 
             for(SessionActivity sa: a){
-                ActivityItem activityItem = new ActivityItem(sa.getStart().toString(), sa.getEnd().toString(), sa.getActivity());
+                ActivityItem activityItem = new ActivityItem(sa.getStart().toString(), sa.getEnd().toString(), sa.getActivity(), sa.getMET_score());
 
                 timeline.addTimepoint(new TimePoint("point", "des"));
                 timeline.addActivity(activityItem);

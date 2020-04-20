@@ -40,9 +40,10 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
+import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
-import ugent.waves.healthrecommenderapp.HelpClasses.goalHandler;
+import ugent.waves.healthrecommenderapp.HelpClasses.dailyTask;
 import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
 import ugent.waves.healthrecommenderapp.Persistance.Recommendation;
 import ugent.waves.healthrecommenderapp.Persistance.RecommendationDao;
@@ -111,10 +112,22 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
         /*
         APP INITIALISATION
          */
+        app = (healthRecommenderApplication) this.getApplicationContext();
+        appDb = app.getAppDb();
+
+        app.setContext(this);
 
         //TODO: waar aanroepen + elke dag ipv week
-        PeriodicWorkRequest work = new PeriodicWorkRequest.Builder(goalHandler.class, 1, TimeUnit.DAYS).build();
-        WorkManager.getInstance(this).enqueue(work);
+        try{
+            /*
+            PeriodicWorkRequest work = new PeriodicWorkRequest.Builder(goalHandler.class, 1, TimeUnit.MINUTES).build();
+            WorkManager.getInstance(this).enqueueUniquePeriodicWork("task", ExistingPeriodicWorkPolicy.KEEP, work);
+            */
+            PeriodicWorkRequest dailyWork = new PeriodicWorkRequest.Builder(dailyTask.class, 1, TimeUnit.MINUTES).build();
+            WorkManager.getInstance(this).enqueueUniquePeriodicWork("dailyTask", ExistingPeriodicWorkPolicy.KEEP, dailyWork);
+        } catch(Exception e){
+            e.printStackTrace();
+        }
 
         Class fragmentClass = SessionHistoryListFragment.class;
         try {
@@ -127,9 +140,6 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
             e.printStackTrace();
         }
 
-        app = (healthRecommenderApplication) this.getApplicationContext();
-        appDb = app.getAppDb();
-
         if (nvDrawer.getHeaderCount() > 0) {
             TextView mName = (TextView) nvDrawer.getHeaderView(0).findViewById(R.id.email);
             ImageView mImageView = (ImageView) nvDrawer.getHeaderView(0).findViewById(R.id.circleImage);
@@ -140,7 +150,7 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
 
         registerReceiver(broadcast_receiver, new IntentFilter("SEND_NOTIFICATION"));
 
-        goalHandler g = new goalHandler(null, this, app);
+        //goalHandler g = new goalHandler(null, this, app);
 
         //g.generateRecommendations();
         //sendRecommendation();
@@ -273,9 +283,12 @@ public class NavigationActivity extends AppCompatActivity implements Notificatio
         //TODO: testen
         try {
             Recommendation[] r = new RecommendationAsyncTask(this, appDb).execute().get();
-            //random recommendation
-            int index = (int) Math.floor(Math.random()*r.length);
-            sendNotification(r[index].getUid(), r[index].getActivity(), r[index].getActivity()+r[index].getDuration()+"");
+            //als er nog recommendations zijn
+            if(r.length > 0){
+                //random recommendation
+                int index = (int) Math.floor(Math.random()*r.length);
+                sendNotification(r[index].getUid(), r[index].getActivity(), r[index].getActivity()+r[index].getDuration()+"");
+            }
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {

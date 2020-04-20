@@ -56,7 +56,6 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
-import ugent.waves.healthrecommenderapp.HelpClasses.goalHandler;
 import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
 import ugent.waves.healthrecommenderapp.Persistance.Recommendation;
 import ugent.waves.healthrecommenderapp.Persistance.RecommendationDao;
@@ -183,12 +182,11 @@ public class SessionHistoryActivity extends AppCompatActivity implements Notific
             switchContent(R.id.container,SessionHistoryListFragment.newInstance(data));
             
             //initialize firestore db
-            db = app.getFirestore();
 
             //get_session_data();
             showRecyclerView();
 
-            goalHandler g = new goalHandler(null, this, app);
+            //goalHandler g = new goalHandler(null, this, app);
             //g.generateRecommendations();
             initActivityDetection();
         }

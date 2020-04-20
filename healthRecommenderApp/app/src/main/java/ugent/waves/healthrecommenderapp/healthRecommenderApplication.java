@@ -1,6 +1,7 @@
 package ugent.waves.healthrecommenderapp;
 
 import android.app.Application;
+import android.content.Context;
 
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -15,17 +16,27 @@ public class healthRecommenderApplication extends Application {
     private int weeknr = 0;
     private int goal = 600;
 
-    private long timeStill;
-    private long startStill;
+    private long timeStill = 0;
+    private long startStill = 0;
 
     private FirebaseFirestore db;
     private AppDatabase appDb;
 
-    private int rank;
 
     private GoogleSignInAccount account;
 
     private GoogleSignInClient mGoogleSignInClient;
+
+    //TODO: each time activity switches, change this
+    private Context mContext;
+
+    public Context getContext() {
+        return mContext;
+    }
+
+    public void setContext(Context mContext) {
+        this.mContext = mContext;
+    }
 
     public int getWeeknr() {
         return weeknr;
@@ -41,13 +52,6 @@ public class healthRecommenderApplication extends Application {
 
     public void setGoal(int goal) {
         this.goal = goal;
-    }
-
-    public FirebaseFirestore getFirestore() {
-        if(db == null){
-            db = FirebaseFirestore.getInstance();
-        }
-        return db;
     }
 
     public AppDatabase getAppDb(){
@@ -74,14 +78,6 @@ public class healthRecommenderApplication extends Application {
 
     public void setStartStill(long startStill) {
         this.startStill = startStill;
-    }
-
-    public int getRank() {
-        return rank;
-    }
-
-    public void setRank(int rank) {
-        this.rank = rank;
     }
 
     public GoogleSignInAccount getAccount() {

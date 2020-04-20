@@ -5,8 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:padding="16dp"
-    android:background="@android:color/red"
-    android:color="@android:color/red"
+    android:background="@color/red"
+    android:color="@color/red"
     app:timeline_margin_start="32dp"
     app:timeline_position="middle"
     app:timeline_type="line">

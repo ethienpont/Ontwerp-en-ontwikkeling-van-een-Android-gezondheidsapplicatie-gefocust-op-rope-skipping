@@ -69,7 +69,7 @@ dependencies {
     implementation files('libs/ij.jar')
     implementation files('libs/Jama-1.0.3.jar')
 
-    def work_version = "2.3.4"
+    def work_version = "2.4.0-alpha02"
 
     // (Java only)
     implementation "androidx.work:work-runtime:$work_version"

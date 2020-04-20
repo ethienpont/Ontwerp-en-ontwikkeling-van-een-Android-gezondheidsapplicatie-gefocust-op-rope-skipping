@@ -88,7 +88,6 @@ public class wearableService extends WearableListenerService {
 
         //TODO: initialise weeknr 0 bij eerste opstart
         app.setWeeknr(0);
-        firestore = app.getFirestore();
 
         //TODO: get age from account (via shared pref mss of get profile in loginact)
         //this.MAXHR = app.getAccount().getRequestedScopes()

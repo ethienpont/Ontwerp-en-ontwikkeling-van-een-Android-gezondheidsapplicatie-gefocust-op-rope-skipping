@@ -45,11 +45,10 @@ public class goalHandler extends Worker {
 
     private Map<Integer, Double> score;
 
-    public goalHandler(WorkerParameters params, Context context, healthRecommenderApplication app){
+    public goalHandler(Context context, WorkerParameters params){
         super(context, params);
-        this.context = context;
-        this.app =  app;
-        this.db = app.getFirestore();
+        this.app =  (healthRecommenderApplication) getApplicationContext();
+        this.context = app.getContext();
         this.score = new HashMap<>();
         this.appDb = app.getAppDb();
     }
@@ -67,7 +66,7 @@ public class goalHandler extends Worker {
 
         generateRecommendations();
 
-        return Result.success(); //failure of retry
+        return Result.retry(); //failure of retry
     }
 
     //TODO: in papers documentatie zoeken over 60 percentiel methode
@@ -118,6 +117,7 @@ public class goalHandler extends Worker {
 
     //TODO: wat doen met data ouder dan 10 weken (activiteiten, sessions)?
     //TODO: test act per sessie
+    //TODO: duration in sec?
     public void generateRecommendations(){
         try {
             //TODO: door async niet ok??
@@ -201,17 +201,28 @@ public class goalHandler extends Worker {
             double recommendedMets = 0;
 
             //TODO: wat als nog geen activiteiten: gewicht 1 -> TESTEN
-            //TODO: met goal uit app
-            while(recommendedMets < 300){
+            while(recommendedMets < app.getGoal()){
                 int act = getRecommendedActivity(weights, totalWeight);
-                Long mean = activity_mean_duration.get(act);
-                double metsPerSec = activity_metsPerSec.get(act);
+                //act werd nog niet beoefend
+                double mets;
+                Long duration;
 
-                double mets = (double) mean * metsPerSec;
+                //TODO: TESTEN
+                if(!activity_mean_duration.containsKey(act)){
+                    //standaar duur van 10 tot 30 min
+                    duration = (long) (Math.random() * (30 - 10)) + 10;
+                    mets = getMetsForDuration(duration);
+
+                } else{
+                    duration = activity_mean_duration.get(act);
+                    double metsPerSec = activity_metsPerSec.get(act);
+
+                    mets = (double) duration * metsPerSec;
+                }
 
                 Recommendation r = new Recommendation();
                 r.setActivity(act);
-                r.setDuration(activity_mean_duration.get(act));
+                r.setDuration(duration);
                 r.setMets(mets);
                 r.setPending(false);
                 r.setDone(false);
@@ -228,7 +239,17 @@ public class goalHandler extends Worker {
         }
     }
 
+    private double getMetsForDuration(Long duration) {
+        double timeMPA = Math.random() * duration;
+        double timeMPV = duration - timeMPA;
+
+        double METmin = 4 * timeMPA + 8 * timeMPV;
+
+        return METmin;
+    }
+
     //TODO: test with model
+    //TODO: randomact is -1?
     private int getRecommendedActivity(Map<Integer, Integer> weights, int totalWeight){
 
         int randomAct = -1;
@@ -242,7 +263,7 @@ public class goalHandler extends Worker {
                 break;
             }
         }
-        return randomAct;
+        return randomAct == -1 ?  0 : randomAct;
         /*
         List<Integer> distribution = new ArrayList<>();
         for(int c: counts.keySet()){

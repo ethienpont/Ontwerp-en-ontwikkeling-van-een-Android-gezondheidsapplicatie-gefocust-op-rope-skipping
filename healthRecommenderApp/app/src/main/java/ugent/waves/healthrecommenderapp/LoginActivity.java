@@ -1,12 +1,16 @@
 package ugent.waves.healthrecommenderapp;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 
@@ -37,18 +41,26 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-//TODO: wat als user permissies zoals age niet toelaat, alert tonen
+//<uses-permission android:name="android.permission.USE_CREDENTIALS" />
+//    <uses-permission android:name="android.permission.MANAGE_ACCOUNTS" />
+//TODO: wat als user permissies zoals age niet toelaat, alert tonen --> request age permission via google??? people  API
 public class LoginActivity extends Activity implements View.OnClickListener {
 
     private static final String TAG = "LoginFragment";
     private healthRecommenderApplication app;
     //permissions
-    String[] appPermissions = {}; //Manifest.permission.ACTIVITY_RECOGNITION
+    String[] appPermissions = {
+            //api level above 29 different permission for activity recognition
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ? "com.google.android.gms.permission.ACTIVITY_RECOGNITION" : Manifest.permission.ACTIVITY_RECOGNITION,
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.GET_ACCOUNTS
+    };
     private boolean permissionsGranted;
 
     //constants
@@ -133,9 +145,7 @@ public class LoginActivity extends Activity implements View.OnClickListener {
     private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
         try {
             account = completedTask.getResult(ApiException.class);
-            permissionsGranted = checkAndRequestPermissions();
-            accessApp();
-            //firebaseAuthWithGoogle(account);
+            checkAndRequestPermissions();
         } catch (ApiException e) {
             // The ApiException status code indicates the detailed failure reason.
             // Please refer to the GoogleSignInStatusCodes class reference for more information.
@@ -144,7 +154,7 @@ public class LoginActivity extends Activity implements View.OnClickListener {
     }
 
     // Check permissions
-    private boolean checkAndRequestPermissions() {
+    private void checkAndRequestPermissions() {
         // Check which permissions are granted
         List<String> listPermissionsNeeded = new ArrayList<>();
         for (String perm : appPermissions) {
@@ -159,24 +169,17 @@ public class LoginActivity extends Activity implements View.OnClickListener {
                     listPermissionsNeeded.toArray(new String[listPermissionsNeeded.size()]),
                     PERMISSION_REQUEST
             );
-            //TODO: nadat user permissies heeft toegestaan true returnen?
-            return false;
-        }
-        /*else if (!GoogleSignIn.hasPermissions(account, fitnessOptions)) {
+        }/*else if (!GoogleSignIn.hasPermissions(account, fitnessOptions)) {
             GoogleSignIn.requestPermissions(
                     this,
                     GOOGLE_FIT_PERMISSIONS_REQUEST_CODE,
                     account,
                     fitnessOptions);
-            //TODO: nadat user permissies heeft toegestaan true returnen?
-            return false;
-        }*/
-
-        // has all permissions
-        return true;
+        } */else{
+            accessApp();
+        }
     }
 
-    //TODO: permissions!!!!!
     @Override
     public void onRequestPermissionsResult(
             int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -189,7 +192,7 @@ public class LoginActivity extends Activity implements View.OnClickListener {
                     permissionResults.put(permissions[i], grantResults[i]);
                 }
             }
-            /*
+
             // At least one or all permissions are denied --> Ask again with rationale
             if(permissionResults.keySet().size() > 0) {
                 for (Map.Entry<String, Integer> entry : permissionResults.entrySet()) {
@@ -225,6 +228,7 @@ public class LoginActivity extends Activity implements View.OnClickListener {
                                 new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialogInterface, int i) {
+                                        //TODO: als nr settings moet gaan, nie omleiden nr accesApp?
                                         dialogInterface.dismiss();
                                         //Go to settings
                                         Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
@@ -244,7 +248,7 @@ public class LoginActivity extends Activity implements View.OnClickListener {
                         break;
                     }
                 }
-            }*/
+            }
         }
     }
 
