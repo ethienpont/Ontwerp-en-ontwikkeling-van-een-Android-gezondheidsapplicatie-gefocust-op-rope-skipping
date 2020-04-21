@@ -39,6 +39,11 @@ fouten detecteren via afgeleide
 
 kijken of model beter werkt aan slechts 1 kant
 
-TODO:   age
-	activiteiten met met score 0 (-1)
+TODO:   age: cas thesis???
+	activiteiten met met score 0 
 	alles opslaan: accelerometer, hartslag
+	gegevens gekoppeld met gsm, niet met googleAccount
+
+	beste epoch bijhouden
+	niet te hoge dropout
+	fourrier

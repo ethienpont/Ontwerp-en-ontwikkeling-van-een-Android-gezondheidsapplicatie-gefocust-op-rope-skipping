@@ -140,7 +140,7 @@ public class goalHandler extends Worker {
 
             for(SessionActivity sa: activities){
                 //als er geen hartslagdata, wordt act niet meegerekend
-                if(sa.getMET_score() != -1){
+                if(sa.getMET_score() != 0){
                     if(!activity_count.containsKey(sa.getActivity())){
                         activity_count.put(sa.getActivity(), 0);
                     }
