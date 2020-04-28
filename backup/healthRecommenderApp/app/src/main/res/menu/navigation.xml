@@ -1,0 +1,22 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="ugent.waves.healthrecommenderapp.NavigationActivity">
+    <item
+        android:id="@+id/history"
+        android:title="history"
+        android:icon="@drawable/rope_skipping"
+        app:showAsAction="withText|ifRoom" />
+    <item
+        android:id="@+id/recommendation"
+        android:orderInCategory="100"
+        android:title="recommendations"
+        android:icon="@drawable/other"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/logout"
+        android:orderInCategory="100"
+        android:title="Sign Out"
+        android:icon="@drawable/google_sign_out"
+        app:showAsAction="never" />
+</menu>

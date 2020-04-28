@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="ugent.waves.healthrecommenderapp">
+
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION" />
+    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+
+    <application
+        android:name=".healthRecommenderApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+        <activity android:name=".SessionHistoryActivity" />
+
+        <receiver
+            android:name=".Services.broadcastReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="ACTIVITY_RECOGNITION" />
+                <action android:name="SNOOZE" />
+            </intent-filter>
+        </receiver>
+
+        <service android:name=".Services.wearableService">
+            <intent-filter>
+
+                <!-- listeners receive events that match the actioand data filters -->
+                <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <action android:name="com.google.android.gms.wearable.MESSAGE_LISTENER" />
+                <action android:name="com.google.android.gms.wearable.CAPABILITY_CHANGED" />
+                <action android:name="com.google.android.gms.wearable.CHANNEL_EVENT" />
+
+                <data
+                    android:host="*"
+                    android:pathPrefix="/ACCELEROMETER"
+                    android:scheme="wear" />
+                <data
+                    android:host="*"
+                    android:pathPrefix="/STOP"
+                    android:scheme="wear" />
+                <data
+                    android:host="*"
+                    android:pathPrefix="/START"
+                    android:scheme="wear" />
+                <data
+                    android:host="*"
+                    android:pathPrefix="/HEARTRATE"
+                    android:scheme="wear" />
+            </intent-filter>
+        </service>
+
+        <activity
+            android:name=".NavigationActivity"
+            android:label="@string/title_activity_navigation"></activity>
+        <activity
+            android:name=".LoginActivity"
+            android:label="@string/title_activity_login">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".StartSessionActivity">
+        </activity>
+    </application>
+
+</manifest>

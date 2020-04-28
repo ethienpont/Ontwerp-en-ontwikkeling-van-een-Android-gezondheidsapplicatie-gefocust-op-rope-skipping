@@ -1,0 +1,6 @@
+backward 180
+jump slow
+forward 180
+jump fast
+cross over
+side swing

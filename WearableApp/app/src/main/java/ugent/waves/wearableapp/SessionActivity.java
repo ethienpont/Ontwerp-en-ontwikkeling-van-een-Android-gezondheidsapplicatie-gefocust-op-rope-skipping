@@ -7,6 +7,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.PermissionChecker;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
@@ -66,15 +67,6 @@ import com.google.android.gms.wearable.MessageClient;
 import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.NodeClient;
 import com.google.android.gms.wearable.Wearable;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.EventListener;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
 
 import org.tensorflow.lite.Interpreter;
 
@@ -105,7 +97,6 @@ public class SessionActivity extends AppCompatActivity implements SensorEventLis
 
     private SensorManager sensorManager;
     private Sensor acceleroSensor;
-    private FirebaseFirestore firestore;
     private List<Map> accelero_dataPoints;
     private List<Map> heart_rate_dataPoints;
     private String currentSession;
@@ -189,8 +180,8 @@ public class SessionActivity extends AppCompatActivity implements SensorEventLis
     private void startRopeSkippingSession() {
         accelero_dataPoints = new ArrayList<>();
         heart_rate_dataPoints = new ArrayList<>();
-        sensorManager.registerListener(this, acceleroSensor, SensorManager.SENSOR_DELAY_NORMAL);
         sensorManager.registerListener(this, heartRateSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this, acceleroSensor, SensorManager.SENSOR_DELAY_NORMAL);
         messageClient.sendMessage(nodeChosen.getId(), START, new byte[]{})
                                     .addOnSuccessListener(new OnSuccessListener<Integer>() {
                                         @Override
@@ -276,7 +267,7 @@ public class SessionActivity extends AppCompatActivity implements SensorEventLis
     @Override
     public void onSensorChanged(final SensorEvent event) {
         //TODO: leeftijd
-        if(event.values[0] > 70){
+        if(event.values[0] > 100){
             sendAlarm();
         }
 
@@ -288,11 +279,13 @@ public class SessionActivity extends AppCompatActivity implements SensorEventLis
                         .addOnSuccessListener(new OnSuccessListener<Integer>() {
                             @Override
                             public void onSuccess(Integer integer) {
+                                Log.e("e","e");
                             }
                         });
                 samples_accelerometer = null;
             }else{
-                for(byte b: FloatArray2ByteArray(event.values, System.nanoTime())){
+                byte[] byteArray = FloatArray2ByteArray(event.values, System.nanoTime());
+                for(byte b: byteArray){
                     samples_accelerometer.add(b);
                 }
             }
@@ -359,20 +352,20 @@ public class SessionActivity extends AppCompatActivity implements SensorEventLis
 
     public byte[] FloatArray2ByteArray(float[] values, Long time){
         Log.d(TAG, time+"");
-        ByteBuffer buffer = ByteBuffer.allocate(4 * values.length+4);
+        ByteBuffer buffer = ByteBuffer.allocate(4*values.length+4);
 
         buffer.putFloat(time.floatValue());
 
         for (float value : values){
             buffer.putFloat(value);
         }
-
-        return buffer.array();
+        byte[] b = buffer.array();
+        return b ;
     }
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
+        Log.d("", "");
     }
 
     @Override

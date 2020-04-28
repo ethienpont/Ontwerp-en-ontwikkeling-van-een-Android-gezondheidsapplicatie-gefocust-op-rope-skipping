@@ -23,7 +23,6 @@ import com.google.android.gms.fitness.data.DataSource;
 import com.google.android.gms.fitness.data.Session;
 import com.google.android.gms.fitness.request.OnDataPointListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -141,7 +140,7 @@ public class LoginActivity extends WearableActivity implements View.OnClickListe
     private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
         try {
             account = completedTask.getResult(ApiException.class);
-            accessApp();
+            checkAndRequestPermissions();
         } catch (ApiException e) {
             // The ApiException status code indicates the detailed failure reason.
             // Please refer to the GoogleSignInStatusCodes class reference for more information.
@@ -150,7 +149,7 @@ public class LoginActivity extends WearableActivity implements View.OnClickListe
     }
 
     // Check wear permissions
-    private boolean checkAndRequestPermissions() {
+    private void checkAndRequestPermissions() {
         // Check which permissions are granted
         List<String> listPermissionsNeeded = new ArrayList<>();
         for (String perm : appPermissions) {
@@ -165,12 +164,9 @@ public class LoginActivity extends WearableActivity implements View.OnClickListe
                     listPermissionsNeeded.toArray(new String[listPermissionsNeeded.size()]),
                     PERMISSION_REQUEST
             );
-            //TODO: nadat user permissies heeft toegestaan true returnen?
-            return false;
+        } else{
+            accessApp();
         }
-
-        // Wear has all permissions
-        return true;
     }
 
     @Override
@@ -239,6 +235,8 @@ public class LoginActivity extends WearableActivity implements View.OnClickListe
                         break;
                     }
                 }
+            } else{
+                accessApp();
             }
         }
     }

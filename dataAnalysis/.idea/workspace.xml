@@ -1,7 +1,102 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="BranchesTreeState">
+    <expand>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="LOCAL_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:origin" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+    </expand>
+    <select />
+  </component>
   <component name="ChangeListManager">
-    <list default="true" id="e13c2251-ca47-41b1-af5f-ca5a005e92bd" name="Default Changelist" comment="" />
+    <list default="true" id="e13c2251-ca47-41b1-af5f-ca5a005e92bd" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/../WearableApp/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../data/forward_180/proefpersoon1/backward_180_left_left_tim.csv.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../data/forward_180/proefpersoon1/backward_180_left_left_tim_nospring.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../data/forward_180/proefpersoon1/backward_180_left_right_tim.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../data/forward_180/proefpersoon1/backward_180_left_right_tim_nospring.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../data/validation_data/scenario4_rechts.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../data/validation_data/scenario6.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../data/validation_data/scenario7_tim.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../data/validation_data/scenario8.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/healthAppBackend.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/healthAppBackend/app/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/healthAppBackend/app/admin.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/healthAppBackend/app/apps.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/healthAppBackend/app/migrations/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/healthAppBackend/app/models.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/healthAppBackend/app/serializers.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/healthAppBackend/app/tests.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/healthAppBackend/app/urls.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/healthAppBackend/app/views.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/healthAppBackend/db.sqlite3" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/healthAppBackend/healthAppBackend/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/healthAppBackend/healthAppBackend/asgi.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/healthAppBackend/healthAppBackend/settings.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/healthAppBackend/healthAppBackend/urls.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/healthAppBackend/healthAppBackend/wsgi.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/healthAppBackend/manage.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../healthRecommenderApp/.idea/render.experimental.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../healthRecommenderApp/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MACHINE LEARNING ONDERZOEK.docx" beforeDir="false" afterPath="$PROJECT_DIR$/../MACHINE LEARNING ONDERZOEK.docx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MACHINE LEARNING ONDERZOEK.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/../MACHINE LEARNING ONDERZOEK.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../WearableApp/.idea/codeStyles/Project.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../WearableApp/.idea/codeStyles/Project.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../WearableApp/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../WearableApp/.idea/gradle.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../WearableApp/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../WearableApp/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../WearableApp/app/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/../WearableApp/app/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../WearableApp/app/src/main/java/ugent/waves/wearableapp/LoginActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/../WearableApp/app/src/main/java/ugent/waves/wearableapp/LoginActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../WearableApp/app/src/main/java/ugent/waves/wearableapp/SessionActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/../WearableApp/app/src/main/java/ugent/waves/wearableapp/SessionActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../WearableApp/app/src/main/java/ugent/waves/wearableapp/wearableAppApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/../WearableApp/app/src/main/java/ugent/waves/wearableapp/wearableAppApplication.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataAnalysis.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataAnalysis.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/.idea/codeStyles/Project.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../healthRecommenderApp/.idea/codeStyles/Project.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../healthRecommenderApp/.idea/gradle.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/app/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/../healthRecommenderApp/app/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/Enums/JumpMoves.java" beforeDir="false" afterPath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/Enums/JumpMoves.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/LoginActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/LoginActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/NavigationActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/NavigationActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/Recommendation/RecommendationListFragment.java" beforeDir="false" afterPath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/Recommendation/RecommendationListFragment.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/Services/wearableService.java" beforeDir="false" afterPath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/Services/wearableService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/healthRecommenderApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/healthRecommenderApplication.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/sessionHistory/ActivityItem.java" beforeDir="false" afterPath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/sessionHistory/ActivityItem.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/sessionHistory/ActivityItemDelegateAdapter.java" beforeDir="false" afterPath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/sessionHistory/ActivityItemDelegateAdapter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/sessionHistory/SessionHistoryFragment.java" beforeDir="false" afterPath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/java/ugent/waves/healthrecommenderapp/sessionHistory/SessionHistoryFragment.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/res/layout/item_activity.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../healthRecommenderApp/app/src/main/res/layout/item_activity.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../logboek-masterproef.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/../logboek-masterproef.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../notebooks/.ipynb_checkpoints/Rope_Skipping_backward_180-checkpoint.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/../notebooks/.ipynb_checkpoints/Rope_Skipping_backward_180-checkpoint.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../notebooks/.ipynb_checkpoints/Rope_Skipping_cross_over-checkpoint.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/../notebooks/.ipynb_checkpoints/Rope_Skipping_cross_over-checkpoint.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../notebooks/.ipynb_checkpoints/Rope_Skipping_forward_180-checkpoint.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/../notebooks/.ipynb_checkpoints/Rope_Skipping_forward_180-checkpoint.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../notebooks/.ipynb_checkpoints/Rope_Skipping_jump_fast-checkpoint.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/../notebooks/.ipynb_checkpoints/Rope_Skipping_jump_fast-checkpoint.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../notebooks/.ipynb_checkpoints/Rope_Skipping_jump_slow-checkpoint.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/../notebooks/.ipynb_checkpoints/Rope_Skipping_jump_slow-checkpoint.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../notebooks/.ipynb_checkpoints/Rope_Skipping_side_swing-checkpoint.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/../notebooks/.ipynb_checkpoints/Rope_Skipping_side_swing-checkpoint.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../notebooks/.ipynb_checkpoints/rope_skipping_cnn-checkpoint.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../notebooks/Rope_Skipping_backward_180.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/../notebooks/Rope_Skipping_backward_180.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../notebooks/Rope_Skipping_cross_over.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/../notebooks/Rope_Skipping_cross_over.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../notebooks/Rope_Skipping_forward_180.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/../notebooks/Rope_Skipping_forward_180.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../notebooks/Rope_Skipping_jump_fast.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/../notebooks/Rope_Skipping_jump_fast.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../notebooks/Rope_Skipping_jump_slow.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/../notebooks/Rope_Skipping_jump_slow.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../notebooks/Rope_Skipping_side_swing.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/../notebooks/Rope_Skipping_side_swing.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../notebooks/backward_180_zonder_pauze_raw.csv" beforeDir="false" afterPath="$PROJECT_DIR$/../notebooks/backward_180_zonder_pauze_raw.csv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../notebooks/rope_skipping_calculations.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/../notebooks/rope_skipping_calculations.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../notebooks/rope_skipping_cnn.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../rope_skipping_simple_cnn/saved_model.pb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../rope_skipping_simple_cnn/variables/variables.data-00000-of-00001" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../rope_skipping_simple_cnn/variables/variables.index" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../~$logboek-masterproef.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../~$presentatie - 19 april.pptx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../~$rt_abstract.docx" beforeDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -23,14 +118,14 @@
   </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
-    <option name="showExcludedFiles" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
     <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../../../cv_ml_bs/computervisie/labo/labos" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RunManager" selected="Python.activity_recognition (1)">
@@ -162,6 +257,17 @@
     </task>
     <servers />
   </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
   </component>
@@ -170,10 +276,10 @@
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="999" y="311" key="#com.jetbrains.python.refactoring.move.PyMoveModuleMembersDialog/0.0.1536.824@0.0.1536.824" timestamp="1583946093403" />
-    <state x="548" y="169" key="FileChooserDialogImpl" timestamp="1586007084612">
+    <state x="548" y="169" key="FileChooserDialogImpl" timestamp="1588078698099">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="548" y="169" key="FileChooserDialogImpl/0.0.1536.824@0.0.1536.824" timestamp="1586007084612" />
+    <state x="548" y="169" key="FileChooserDialogImpl/0.0.1536.824@0.0.1536.824" timestamp="1588078698099" />
     <state width="1515" height="196" key="GridCell.Tab.0.bottom" timestamp="1584117897806">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
@@ -206,10 +312,10 @@
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state width="1515" height="199" key="GridCell.Tab.1.right/0.0.1536.824@0.0.1536.824" timestamp="1584100914808" />
-    <state x="279" y="57" key="SettingsEditor" timestamp="1584010523151">
+    <state x="279" y="57" key="SettingsEditor" timestamp="1588065561957">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="279" y="57" key="SettingsEditor/0.0.1536.824@0.0.1536.824" timestamp="1584010523151" />
+    <state x="279" y="57" key="SettingsEditor/0.0.1536.824@0.0.1536.824" timestamp="1588065561957" />
     <state x="0" y="0" key="com.intellij.ide.util.TipDialog" timestamp="1586007031226">
       <screen x="0" y="0" width="1536" height="824" />
     </state>

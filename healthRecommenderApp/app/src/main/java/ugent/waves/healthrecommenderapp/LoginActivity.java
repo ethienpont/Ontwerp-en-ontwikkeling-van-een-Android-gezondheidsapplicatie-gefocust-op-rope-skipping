@@ -57,6 +57,7 @@ import androidx.core.content.ContextCompat;
 // <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
 //TODO: wat als user permissies zoals age niet toelaat, alert tonen --> request age permission via google??? people  API
 //TODO: people api: secret van webclient, google sign in kan enkel met webclient??? -> sha updaten?, application name??
+//TODO: sign in doesnt work, door veranderne van pc mss
 public class LoginActivity extends Activity implements View.OnClickListener {
 
     private static final String TAG = "LoginFragment";
@@ -120,7 +121,7 @@ public class LoginActivity extends Activity implements View.OnClickListener {
     private void accessApp(){
         app.setAccount(account);
         app.setmGoogleSignInClient(mGoogleSignInClient);
-
+        /*
         try {
             //TODO: getting profile info doesnt finish
             Person pr = new GetProfileDetails(account, this, "la").execute().get();
@@ -130,7 +131,7 @@ public class LoginActivity extends Activity implements View.OnClickListener {
             e.printStackTrace();
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }
+        }*/
         Intent intent = new Intent(this, NavigationActivity.class);
         startActivity(intent);
     }
@@ -259,6 +260,8 @@ public class LoginActivity extends Activity implements View.OnClickListener {
                         break;
                     }
                 }
+            } else{
+                accessApp();
             }
         }
     }
