@@ -1,6 +1,7 @@
 package ugent.waves.healthrecommenderapp.sessionHistory;
 
 import android.app.Activity;
+import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -10,9 +11,14 @@ import android.view.ViewGroup;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.ExecutionException;
 
+import androidx.appcompat.view.ContextThemeWrapper;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import ugent.waves.healthrecommenderapp.Asynctasks.ActivityAsyncTask;
+import ugent.waves.healthrecommenderapp.Asynctasks.MistakeAsyncTask;
+import ugent.waves.healthrecommenderapp.HelpClasses.Constants;
 import ugent.waves.healthrecommenderapp.Persistance.ActivityDao;
 import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
 import ugent.waves.healthrecommenderapp.Persistance.Mistake;
@@ -23,21 +29,6 @@ import ugent.waves.healthrecommenderapp.healthRecommenderApplication;
 
 public class SessionHistoryFragment extends Fragment {
 
-    /*
-        <data>
-        <variable name="sessionData" type="ugent.waves.healthrecommenderapp.dataclasses.SessionHistoryData"/>
-        <import type="android.view.View"/>
-    </data>
-
-    <Layout>
-
-    dataBinding {
-        enabled = true
-    }
-     */
-
-    private static final String ARG_DATA = "sessionId";
-    private static final String TAG = "SessionHistoryFragment";
     private int id;
     private healthRecommenderApplication app;
 
@@ -62,13 +53,7 @@ public class SessionHistoryFragment extends Fragment {
 
         appDb = app.getAppDb();
 
-        id = getArguments().getInt(ARG_DATA);
-
-        getSessionActivities();
-        // Inflate the layout for this fragment
-        //SessionHistoryFragmentBinding binding = DataBindingUtil.inflate(inflater, R.layout.session_history_fragment, container, false);
-        //View view = binding.getRoot();
-        //binding.setSessionData(data);
+        id = getArguments().getInt(Constants.ARG_DATA);
 
         timelineRecyclerAdapter = initTimelineData();
 
@@ -81,31 +66,29 @@ public class SessionHistoryFragment extends Fragment {
         TimelineRecyclerAdapter timeline = new TimelineRecyclerAdapter();
 
         try {
-            SessionActivity[] a = new ActivityAsyncTask(getActivity(), appDb, id).execute().get();
-            Mistake[] m = new MistakeAsyncTask(getActivity(), appDb, id).execute().get();
+            SessionActivity[] a = new ActivityAsyncTask( appDb, id, app.getAccount().getId(), Constants.GET_ALL).execute().get();
+            Mistake[] m = new MistakeAsyncTask( appDb, id,app.getAccount().getId(), Constants.GET_ALL).execute().get();
 
             int mis = 0;
             for(Mistake j: m){
-                if((a[0].getStart() <= j.getTime()) && (a[0].getEnd() <= j.getTime())){
+                if((a[0].getStart() <= j.getTime()) && (a[0].getEnd() > j.getTime())){
                     mis++;
                 }
             }
-            ActivityItem item = new ActivityItem(a[0].getStart().toString(), a[0].getEnd().toString(), a[0].getActivity(), a[0].getMET_score(), mis);
+            ActivityItem item = new ActivityItem(a[0].getStart().toString(), a[0].getEnd().toString(), a[0].getActivity(), mis);
             timeline.addActivity(item);
 
             for(int i=1; i<a.length; i++){
-                //TODO: aantal mistakes gwn als var in activity
                 mis = 0;
                 for(Mistake j: m){
-                    if((a[i].getStart() <= j.getTime()) && (a[i].getEnd() <= j.getTime())){
+                    if((a[i].getStart() <= j.getTime()) && (a[i].getEnd() > j.getTime())){
                         mis++;
                     }
                 }
-                ActivityItem activityItem = new ActivityItem(a[i].getStart().toString(), a[i].getEnd().toString(), a[i].getActivity(), a[i].getMET_score(), mis);
+                ActivityItem activityItem = new ActivityItem(a[i].getStart().toString(), a[i].getEnd().toString(), a[i].getActivity(), mis);
 
-                timeline.addTimepoint(new TimePoint("point", "des"));
+                timeline.addTimepoint(new TimePoint(a[i-1].getMET_score()+" points"));
                 timeline.addActivity(activityItem);
-
             }
 
         } catch (ExecutionException e) {
@@ -116,62 +99,11 @@ public class SessionHistoryFragment extends Fragment {
         return timeline;
     }
 
-    //TODO: hoeveel minuten gedaan van elke beweging?
-    private void getSessionActivities() {
-        try {
-            SessionActivity[] a = new ActivityAsyncTask(getActivity(), appDb, id).execute().get();
-            Mistake[] m = new MistakeAsyncTask(getActivity(), appDb, id).execute().get();
-
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
     public static SessionHistoryFragment newInstance(int sessionId) {
         SessionHistoryFragment fragment = new SessionHistoryFragment();
         Bundle args = new Bundle();
-        args.putInt(ARG_DATA, sessionId);
+        args.putInt(Constants.ARG_DATA, sessionId);
         fragment.setArguments(args);
         return fragment;
-    }
-
-    private static class ActivityAsyncTask extends AsyncTask<Void, Void, SessionActivity[]> {
-        //Prevent leak
-        private WeakReference<Activity> weakActivity;
-        private AppDatabase db;
-        private int id;
-
-        public ActivityAsyncTask(Activity activity, AppDatabase db, int id) {
-            weakActivity = new WeakReference<>(activity);
-            this.db = db;
-            this.id = id;
-        }
-
-        @Override
-        protected SessionActivity[] doInBackground(Void... params) {
-            ActivityDao activityDao = db.activityDao();
-            return activityDao.getActivitiesForSession(id);
-        }
-    }
-
-    private static class MistakeAsyncTask extends AsyncTask<Void, Void, Mistake[]> {
-        //Prevent leak
-        private WeakReference<Activity> weakActivity;
-        private AppDatabase db;
-        private int id;
-
-        public MistakeAsyncTask(Activity activity, AppDatabase db, int id) {
-            weakActivity = new WeakReference<>(activity);
-            this.db = db;
-            this.id = id;
-        }
-
-        @Override
-        protected Mistake[] doInBackground(Void... params) {
-            MistakeDao mistakeDao = db.mistakeDao();
-            return mistakeDao.getMistakesForSession(id);
-        }
     }
 }

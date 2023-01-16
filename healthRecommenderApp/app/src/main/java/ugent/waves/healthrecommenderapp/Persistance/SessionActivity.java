@@ -9,10 +9,12 @@ import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
 @Entity(tableName = "Activity")
-public class SessionActivity implements Parcelable {
+public class SessionActivity{
     @PrimaryKey(autoGenerate = true)
-    @NonNull
     private int uid;
+
+    @ColumnInfo(name = "userId")
+    private String userId;
 
     @ColumnInfo(name = "sessionId")
     private int sessionId;
@@ -31,47 +33,6 @@ public class SessionActivity implements Parcelable {
 
     @ColumnInfo(name = "week")
     private int week;
-
-    public SessionActivity(){
-
-    }
-
-    public SessionActivity(int sessionId, Long start, Long end, double MET_score, int activity) {
-        this.sessionId = sessionId;
-        this.start = start;
-        this.end = end;
-        this.MET_score = MET_score;
-        this.activity = activity;
-    }
-
-    protected SessionActivity(Parcel in) {
-        uid = in.readInt();
-        sessionId = in.readInt();
-        if (in.readByte() == 0) {
-            start = null;
-        } else {
-            start = in.readLong();
-        }
-        if (in.readByte() == 0) {
-            end = null;
-        } else {
-            end = in.readLong();
-        }
-        MET_score = in.readDouble();
-        activity = in.readInt();
-    }
-
-    public static final Creator<SessionActivity> CREATOR = new Creator<SessionActivity>() {
-        @Override
-        public SessionActivity createFromParcel(Parcel in) {
-            return new SessionActivity(in);
-        }
-
-        @Override
-        public SessionActivity[] newArray(int size) {
-            return new SessionActivity[size];
-        }
-    };
 
     public int getUid() {
         return uid;
@@ -121,25 +82,20 @@ public class SessionActivity implements Parcelable {
         this.week = week;
     }
 
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeLong(this.start);
-        dest.writeLong(this.end);
-        dest.writeDouble(this.MET_score);
-        dest.writeInt(this.activity);
-    }
-
     public int getActivity() {
         return activity;
     }
 
     public void setActivity(int activity) {
         this.activity = activity;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 }
 

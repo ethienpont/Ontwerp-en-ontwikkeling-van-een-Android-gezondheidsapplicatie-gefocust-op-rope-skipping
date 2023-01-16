@@ -19,7 +19,6 @@ public class ActivityItemDelegateAdapter implements ViewTypeDelegateAdapter{
             return viewHolder;
         }
 
-        //TODO: error id not found, maar werkt wel?
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, ViewType item) {
             try{
@@ -27,9 +26,8 @@ public class ActivityItemDelegateAdapter implements ViewTypeDelegateAdapter{
                 ActivityItem t = (ActivityItem) item;
                 activityHolder.start.setText("start: " + t.getStart());
                 activityHolder.end.setText("end: " + t.getEnd());
-                activityHolder.date.setText("activity: " +JumpMoves.getJumpName(t.getActivity()));
-                activityHolder.mets.setText(t.getMets()+"");
-                activityHolder.mistakes.setText(t.getMistakes()+"");
+                activityHolder.date.setText(JumpMoves.getJumpName(t.getActivity()));
+                activityHolder.mistakes.setText(t.getMistakes()+" mistakes");
             }catch (Exception e){
                 e.printStackTrace();
             }
@@ -39,7 +37,6 @@ public class ActivityItemDelegateAdapter implements ViewTypeDelegateAdapter{
             public TextView date;
             public TextView start;
             public TextView end;
-            public TextView mets;
             public TextView mistakes;
 
             public ActivityItemViewHolder(View itemView) {
@@ -48,7 +45,6 @@ public class ActivityItemDelegateAdapter implements ViewTypeDelegateAdapter{
                 this.date = (TextView) itemView.findViewById(R.id.date_timeline);
                 this.start = (TextView) itemView.findViewById(R.id.start_timeline);
                 this.end = (TextView) itemView.findViewById(R.id.end_timeline);
-                this.mets = (TextView) itemView.findViewById(R.id.mets_timeline);
                 this.mistakes = (TextView) itemView.findViewById(R.id.mistakes_timeline);
             }
         }

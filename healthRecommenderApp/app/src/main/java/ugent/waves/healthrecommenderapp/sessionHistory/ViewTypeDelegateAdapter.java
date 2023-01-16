@@ -9,5 +9,4 @@ interface ViewTypeDelegateAdapter {
     RecyclerView.ViewHolder onCreateViewHolder(ViewGroup p);
 
     void onBindViewHolder(RecyclerView.ViewHolder holder, ViewType item);
-
 }

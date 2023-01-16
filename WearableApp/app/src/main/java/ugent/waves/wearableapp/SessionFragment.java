@@ -12,12 +12,11 @@ import java.util.Map;
 
 import androidx.fragment.app.Fragment;
 
+//Display button to start session
 public class SessionFragment extends Fragment {
 
-    public static Fragment newInstance(Map<String,Object> data) {
+    public static Fragment newInstance() {
         SessionFragment fragment = new SessionFragment();
-        Bundle args = new Bundle();
-        fragment.setArguments(args);
         return fragment;
     }
 
@@ -33,16 +32,6 @@ public class SessionFragment extends Fragment {
             public void onClick(View v)
             {
                 ((SessionActivity)getActivity()).showDialog();
-            }
-        });
-
-        ImageView signOut = (ImageView) view.findViewById(R.id.sign_out);
-        signOut.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View v)
-            {
-                ((SessionActivity)getActivity()).signOut();
             }
         });
         // Inflate the layout for this fragment

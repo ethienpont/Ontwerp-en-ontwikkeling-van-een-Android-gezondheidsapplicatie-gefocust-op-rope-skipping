@@ -1,37 +1,21 @@
 package ugent.waves.healthrecommenderapp.Persistance;
 
-import java.util.List;
-
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
-import androidx.room.Transaction;
 
 @Dao
-public abstract class SessionDao {
-
-    public void insertActivitiesForSession(Session session, List<SessionActivity> activities){
-
-        for(SessionActivity a : activities){
-            a.setSessionId(session.getUid());
-        }
-
-        _insertAll(activities);
-    }
+public interface SessionDao {
 
     @Insert
-    abstract void _insertAll(List<SessionActivity> activities);
+    long insertSession(Session session);
 
-    @Insert
-    public abstract long insertSession(Session session);
+    @Query("SELECT * FROM Session WHERE week > :week AND userId = :user")
+    Session[] getSessionsFromWeek(int week, String user);
 
-    @Query("SELECT * FROM Session WHERE week > :week")
-    public abstract Session[] getSessionsFromWeek(int week);
+    @Query("SELECT * FROM Session WHERE userId = :user")
+    Session[] loadAllSessions(String user);
 
-    @Query("SELECT * FROM Session")
-    public abstract Session[] loadAllSessions();
-
-    @Transaction
-    @Query("SELECT * FROM Session")
-    public abstract List<SessionWithActivities> getSessionsWithActivities();
+    @Query("DELETE FROM Session WHERE week < :week AND userId = :user")
+    void deleteSessions(int week, String user);
 }

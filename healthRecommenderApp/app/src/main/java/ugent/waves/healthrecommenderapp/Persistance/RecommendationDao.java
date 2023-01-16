@@ -8,23 +8,23 @@ import androidx.room.Update;
 @Dao
 public interface RecommendationDao {
 
-    @Query("DELETE FROM Recommendation")
-    void deleteAllRecommendations();
+    @Query("DELETE FROM Recommendation WHERE userId = :user")
+    void deleteAllRecommendations(String user);
 
-    @Query("SELECT * FROM Recommendation WHERE done = :done")
-    Recommendation[] getRecommendationWithDone(boolean done);
+    @Query("SELECT * FROM Recommendation WHERE done = :done AND userId = :user")
+    Recommendation[] getRecommendationWithDone(boolean done, String user);
 
-    @Query("SELECT * FROM Recommendation")
-    Recommendation[] getAllRecommendations();
+    @Query("SELECT * FROM Recommendation WHERE userId = :user")
+    Recommendation[] getAllRecommendations(String user);
 
     @Query("SELECT * FROM Recommendation WHERE uid = :id")
     Recommendation getRecommendationForId(int id);
 
-    @Query("SELECT * FROM Recommendation WHERE pending = :pending")
-    Recommendation[] getPendingRecommendation(boolean pending);
+    @Query("SELECT * FROM Recommendation WHERE pending = :pending AND userId = :user")
+    Recommendation[] getPendingRecommendation(boolean pending, String user);
 
     @Update
-    void updateRecommendation(Recommendation recommendation);
+    int updateRecommendation(Recommendation recommendation);
 
     @Insert
     void insertRecommendation(Recommendation recommendation);

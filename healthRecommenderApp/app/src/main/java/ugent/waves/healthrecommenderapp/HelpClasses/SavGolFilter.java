@@ -61,25 +61,30 @@ public class SavGolFilter{
      * @param data the array that is going to be filtered.
      * */
     public double[] filterData(double[] data){
-        int pts = data.length;
-        double[] ret_value = new double[pts];
+        try{
+            int pts = data.length;
+            double[] ret_value = new double[pts];
 
-        int j;
-        //reflected
-        for(j = 0; j<LEFT; j++)
-            ret_value[j] = rFilter(data, coefficients, j, LEFT);
-
-
-        //normal
-        for(j = LEFT; j<pts - RIGHT; j++)
-            ret_value[j] = filter(data, coefficients, j, LEFT);
+            int j;
+            //reflected
+            for(j = 0; j<LEFT; j++)
+                ret_value[j] = rFilter(data, coefficients, j, LEFT);
 
 
-        //reflected
-        for(j = pts - RIGHT; j<pts; j++)
-            ret_value[j] = rFilter(data, coefficients, j, LEFT);
+            //normal
+            for(j = LEFT; j<pts - RIGHT; j++)
+                ret_value[j] = filter(data, coefficients, j, LEFT);
 
-        return ret_value;
+
+            //reflected
+            for(j = pts - RIGHT; j<pts; j++)
+                ret_value[j] = rFilter(data, coefficients, j, LEFT);
+
+            return ret_value;
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        return null;
     }
     /**
      * filters the data by assuming the ends are reflected.
@@ -89,22 +94,25 @@ public class SavGolFilter{
     public float[] filterData(float[] data){
         int pts = data.length;
         float[] ret_value = new float[pts];
-
-        int j;
-        //reflected
-        for(j = 0; j<LEFT; j++)
-            ret_value[j] = (float)rFilter(data, coefficients, j, LEFT);
-
-
-        //normal
-        for(j = LEFT; j<pts - RIGHT; j++)
-            ret_value[j] = filter(data, coefficients, j, LEFT);
+        try{
+            int j;
+            //reflected
+            for(j = 0; j<LEFT; j++)
+                ret_value[j] = (float)rFilter(data, coefficients, j, LEFT);
 
 
-        //reflected
-        for(j = pts - RIGHT; j<pts; j++)
-            ret_value[j] = (float)rFilter(data, coefficients, j, LEFT);
+            //normal
+            for(j = LEFT; j<pts - RIGHT; j++)
+                ret_value[j] = filter(data, coefficients, j, LEFT);
 
+
+            //reflected
+            for(j = pts - RIGHT; j<pts; j++)
+                ret_value[j] = (float)rFilter(data, coefficients, j, LEFT);
+
+        } catch(Exception e){
+            e.printStackTrace();
+        }
         return ret_value;
     }
 

@@ -8,8 +8,10 @@ import androidx.room.PrimaryKey;
 @Entity(tableName = "Session")
 public class Session {
     @PrimaryKey(autoGenerate = true)
-    @NonNull
     private int uid;
+
+    @ColumnInfo(name = "userId")
+    private String userId;
 
     @ColumnInfo(name = "turns")
     private int turns;
@@ -19,6 +21,9 @@ public class Session {
 
     @ColumnInfo(name = "week")
     private int week;
+
+    @ColumnInfo(name = "mistakes")
+    private int mistakes;
 
     public int getUid() {
         return uid;
@@ -44,12 +49,27 @@ public class Session {
         this.week = week;
     }
 
-
     public double getMets() {
         return mets;
     }
 
     public void setMets(double mets) {
         this.mets = mets;
+    }
+
+    public int getMistakes() {
+        return mistakes;
+    }
+
+    public void setMistakes(int mistakes) {
+        this.mistakes = mistakes;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 }

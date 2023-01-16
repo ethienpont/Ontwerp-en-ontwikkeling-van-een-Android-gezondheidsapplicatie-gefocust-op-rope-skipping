@@ -18,7 +18,7 @@
         android:supportsRtl="true"
         android:theme="@android:style/Theme.DeviceDefault">
         <activity
-            android:name=".LoginActivity"
+            android:name=".StartActivity"
             android:label="@string/title_activity_list">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -29,7 +29,8 @@
         <activity android:name=".SessionActivity"
             android:theme="@style/AppTheme"></activity>
         <service
-            android:name=".messagingService">
+            android:name=".messagingService"
+            android:exported="true">
             <intent-filter>
             <!-- listeners receive events that match the actioand data filters -->
                 <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />
@@ -41,6 +42,10 @@
                 <data
                     android:host="*"
                     android:pathPrefix="/SESSION_START"
+                    android:scheme="wear" />
+                <data
+                    android:host="*"
+                    android:pathPrefix="/AGE"
                     android:scheme="wear" />
             </intent-filter>
         </service>

@@ -4,15 +4,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    app:cardBackgroundColor="@android:color/transparent"
+    app:cardBackgroundColor="@color/colorIcons"
     app:cardCornerRadius="5dp"
-    app:cardElevation="0dp">
+    app:cardElevation="2dp">
 
     <pl.hypeapp.materialtimelineview.MaterialTimelineView
         android:id="@+id/item_weather_timeline"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/black_effective"
         android:padding="16dp"
         app:timeline_margin_start="32dp"
         app:timeline_position="middle"
@@ -34,14 +33,12 @@
             android:layout_marginStart="8dp"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:textColor="@color/colorIcons"
             app:layout_constraintStart_toEndOf="@id/icon"/>
 
         <TextView
             android:id="@+id/start_timeline"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@color/colorIcons"
             app:layout_constraintStart_toStartOf="@id/date_timeline"
             app:layout_constraintTop_toBottomOf="@id/date_timeline"/>
 
@@ -51,31 +48,18 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:layout_marginRight="8dp"
-            android:textColor="@color/colorIcons"
             app:layout_constraintStart_toStartOf="@id/start_timeline"
             app:layout_constraintTop_toBottomOf="@id/start_timeline"/>
 
         <TextView
-            android:id="@+id/mets_timeline"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@color/colorIcons"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"/>
-
-        <TextView
             android:id="@+id/mistakes_timeline"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@color/colorIcons"
-            android:textSize="24sp"
+            android:textSize="18sp"
             android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"/>
+            app:layout_constraintTop_toTopOf="parent"
+            android:layout_height="wrap_content" />
 
     </pl.hypeapp.materialtimelineview.MaterialTimelineView>
 

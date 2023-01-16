@@ -21,7 +21,6 @@ public class TimepointItemDelegateAdapter implements ViewTypeDelegateAdapter{
     public void onBindViewHolder(RecyclerView.ViewHolder holder, ViewType item) {
         TimeLineViewHolder timeHolder = (TimeLineViewHolder) holder;
         TimePoint t = (TimePoint) item;
-        timeHolder.description.setText(t.getDescription());
         timeHolder.time.setText(t.getTimePoint());
     }
 
@@ -32,7 +31,6 @@ public class TimepointItemDelegateAdapter implements ViewTypeDelegateAdapter{
         public TimeLineViewHolder(View itemView) {
             super(itemView);
             this.time = (TextView) itemView.findViewById(R.id.time);
-            this.description = (TextView) itemView.findViewById(R.id.time_description);
         }
     }
 }

@@ -18,7 +18,6 @@ class TimelineRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
     public TimelineRecyclerAdapter(){
         items = new ArrayList<>();
         delegateAdapters = new HashMap<>();
-        //delegateAdapters.put(ViewType.HEADER, WeatherHeaderItemDelegateAdapter());
         delegateAdapters.put(ViewType.LINE, new TimepointItemDelegateAdapter());
         delegateAdapters.put(ViewType.ITEM, new ActivityItemDelegateAdapter());
     }

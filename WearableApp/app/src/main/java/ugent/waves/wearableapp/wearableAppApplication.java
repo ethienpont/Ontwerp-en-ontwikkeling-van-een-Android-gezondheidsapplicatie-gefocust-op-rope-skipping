@@ -2,16 +2,15 @@ package ugent.waves.wearableapp;
 
 import android.app.Application;
 
-import com.google.android.gms.auth.api.signin.GoogleSignInClient;
-
+//ApplicationContext to make age available in the app
 public class wearableAppApplication extends Application {
-    private GoogleSignInClient client;
+    private int age;
 
-    public GoogleSignInClient getClient() {
-        return client;
+    public int getAge() {
+        return age;
     }
 
-    public void setClient(GoogleSignInClient client) {
-        this.client = client;
+    public void setAge(int age) {
+        this.age = age;
     }
 }

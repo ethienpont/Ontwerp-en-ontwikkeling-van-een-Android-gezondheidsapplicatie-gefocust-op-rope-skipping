@@ -1,0 +1,145 @@
+\chapter{Literatuurstudie}
+\section{Bewegingsherkenning}
+Een eerste luik van de literatuurstudie verdiept zich in de verschillende technieken omtrent \textit{activity recognition}. Dit is van groot belang in het kader van rope skipping als middel voor conditietraining.
+Op vlak van bewegingsherkenning werd reeds omvangrijk onderzoek verricht. In wat volgt worden relevante studies meer in detail besproken. \\
+
+\subsection{Algemeen}
+
+In \citep{ref1} probeert men aan de hand van \textit{deep learning} een accurater bewegingsherkenning model te creëren.
+
+Gebruik maken van deep learning methoden heeft namelijk vele voordelen in termen van systeem performantie en flexibiliteit. oppervlakkige modellen blijven vaak hangen in lokale optima.
+Ook is handmatige \textit{feature extraction} hierbij niet meer noodzakelijk. Handgemaakte features zoals statistische berekeningen zijn specifiek voor het probleem en ze kunnen niet veralgemeend worden naar andere domeinen. Menselijke interventie voor selecteren van de meest effectieve features is noodzakelijk bij deze aanpak. 
+Een oplossing voor deze problemen vindt men in deep learning. Methodieken op basis van data zoals deep learning kunnen onderscheidende features leren vanuit historische informatie, dit is automatisch en systematisch. Ook zijn deze modellen beter bestand tegen \textit{overfitting}.
+
+Het deep learning model ontwikkeld in dit onderzoek leert de gewichten van het neuraal netwerk en de informatieve features uit onbewerkte data. Het model bestaat uit twee stappen: een \textit{unsupervised, pre training} stap en een \textit{supervised, fine-tuning} stap. De pre training stap leert features aan de hand van \textit{deep belief networks} en \textit{restricted boltzmann machines}.
+
+Data verzameling en training van het model gebeurt offline en dus niet op een mobiel apparaat. Deze studie maakt tijdens de trainingsfase gebruik van een sliding \textit{window}. Dit om de relatie tussen verschillende datapunten eveneens in beeld te brengen.  Met het gemaakte model wordt vervolgens aan online bewegingsherkenning uitgevoerd. 
+
+Deep learning methoden zijn zeker een goede kandidaat voor het classificatie probleem onderzocht in deze thesis. Bijgevolg zal dit, samen met enkele andere algoritmen, uitgewerkt worden.\\
+
+In \citep{ref6}, een tweede studie van bewegingsherkenning op basis van accelerometer data, werden volgende zaken aangehaald. De onbewerkte time series data werd onderverdeeld in segmenten van tien seconden waarbij per segment verschillende features zijn geïdentificeerd. 6 basis feature types werden gebruikt: het gemiddelde, de standaard deviatie, het gemiddeld absoluut verschil, de gemiddelde resulterende versnelling, de tijd tussen pieken en, als laatste,  \textit{binned distribution}. Op basis van deze types wordt een groot aantal features bekomen per segment.
+In deze studie werden J48, \textit{logistic regression} en MLP gebruikt als algoritmen. Dit zijn geen deep learning methodes waardoor handmatige feature extraction inderdaad vereist is.
+De studie toont aan dat een ensemble van \textit{classifiers} kan gebruikt worden voor complexe activiteiten herkenning. 
+Via een train-test split en \textit{10-Fold cross validation} wordt een test dataset bekomen. 
+
+Het verdelen in segmenten van de onderzochte data is noodzakelijk om contextuele features te bekomen uit het signaal. Bijgevolg werd deze techniek toegepast in het kader van dit onderzoek. Ook zullen, bij bepaalde algoritmen die meer features vereisen, de aangehaalde statistische varianten gebruikt worden als zinvolle aanvulling. \\
+
+In \citep{ref13} wordt onderzocht wat de meest optimale window grootte en sampling frequentie is. Dit is echter zeer afhankelijk van het soort activiteit. Windows van 0.5 tot 17 seconden zijn hierbij mogelijk. Deze studie brengt menselijke reactietijd in rekening. Een minimum sampling frequentie van 32Hz is bijgevolg nodig om correcte data te bekomen.
+Windows waarin niet genoeg data aanwezig is om de volledige tijd te vullen, partiële windows, worden verwijderd.
+Het aantal data objecten in een window hangt af van de window grootte en sampling frequentie. Men kwam tot deze conclusie na een aantal experimenten met variërende window groottes en sampling frequenties.
+246 features werden geëxtraheerd en vervolgens gereduceerd tot een aantal van 32 via correlatie gebasseerde \textit{feature selection}. Deze features komen uit zowel het tijd- en frequentiedomein. 
+\textit{Random Forest classifier} geeft goede resultaten op de gebruikte dataset in deze studie. 
+De ideale combinatie van window grootte en sampling frequentie werd gevonden door toepassing op en vergelijking van volgende categorieën: geslacht, leeftijd en BMI. Deze onderverdelingen gaven gelijkaardige resultaten, namelijk een window grootte van tien seconden en een sampling frequentie van 50 Hz.
+
+In een eerste fase van het onderzoek uitgevoerd tijdens deze thesis werd de optimale window grootte gevonden in deze studie gebruikt. Het idee om partële windows te verwijderen werd eveneens overgenomen. \\
+
+In \citep{ref15} wordt een afweging gemaakt tussen het aantal sensoren en de gebruikte classifier. Het gebruik van meerdere sensoren (bijvoorbeeld sensoren op de pols en borst) resulteert in vermindering van het gebruiksgemak. Gebruik van meerdere sensoren resulteert namelijk in belemmering van bewegingen en een onpraktisch element bij langdurig gebruik. 
+Enkel een accelerometer sensor wordt bijgevolg gebruikt met eliminatie van de gyroscoop sensor. Vroegere studies hebben bewezen dat meerdere sensoren nadelig zijn bij het identificeren van menselijke activiteiten. Er werd eveneens bewezen dat accelerometer data voldoende is om de classificatie tot een goed eind te brengen.
+Voor signaal segmentatie wordt gebruik gemaakt van een sliding window met 50\% overlap. In deze studie levert dit goede resultaten. 
+Een volgende stap is feature extraction. Hierbij worden features berekend gebruikmakend van het tijd- en frequentiedomein. Hierna wordt een \textit{normality test} uitgevoerd om na te gaan of de bekomen features passen in een normale distributie. Als we dit weten kan bepaald worden of parametrische of niet-parametrische classificatie hulpmiddelen vereist zijn. Volgende drie testen worden gehandhaafd: \textit{shapiro-Wilk, kolmogorov-smirnov en anderson-darling}. Als de features niet in een normale distributie passen zijn niet-parametrische tools beter geschikt.
+Via het PCA algoritme wordt dimensionale reductie uitgevoerd. Ook worden de bekomen features genormaliseerd naar een interval van 0 tot 1.
+In deze studie werd een vergelijking gemaakt tussen de performantie van de machine learning algoritmes voor en na dimensionale reductie. De gemiddelde accuraatheid ligt hoger bij het toepassen van \textit{dimensionality reduction}.
+Ook werd de performantie van algoritmes op tijd- en frequentiedomein gebaseerde features vergeleken. Hieruit wordt geconcludeerd dat het frequentie domein betekenisvollere info geeft.
+
+Bijgevolg zal tijdens dit onderzoek enkel gebruik gemaakt worden van een \textit{smartwatch} sensor om zo te zorgen voor optimaal gebruiksgemak. Er wordt eveneens gefocust op accelerometer data. In een eerste fase van het onderzoek werd een overlap van 50\% gehanteerd. De besproken studie heeft ook aangetoond dat dimensionality reduction de accuraatheid bevorderd. Bijgevolg werd dit toegepast tijdens het onderzoek waar nodig. \\
+
+In \cite{ref76} wordt onder andere een vergelijking gemaakt tussen multi en single sensor gebruik. Hierbij werd geconcludeerd dat gebruik van meerdere sensoren resulteert in een accuraatheid van 94\% tot 96\% terwijl enkele sensoren accuraatheden tussen 90\% en 92\% vertonen. Deze studie focust op activiteiten zoals wandelen, zitten en trantities vanuit een zittende positie. Het onderzoek uitgevoerd tijdens deze thesis focust echter op rope skipping. Hierbij zijn polsbewegingen cruciaal waardoor het gebrek aan meerder sensoren niet voor een spectaculaire daling in accuraatheid zal zorgen.
+
+De studie \citep{ref16} is een volgend voorbeeld van activity recognition en de mogelijke feature extraction methodes hierbij.
+Hier wordt aangehaald dat het is nodig om normalisatie van de input data toe te passen nog voor andere \textit{preprocessing} technieken uitgevoerd worden.
+In verband met feature extraction worden volgende zaken toegepast. In het tijdsdomein worden zeventien features berekend over elk window en voor elke as. Deze bevatten statistische features (gemiddelde, variantie, standaard deviatie), envelope metrieken (mediaan, interval maximum en minimum waarde, root main square) en andere features (\textit{signal magnitude area}, indexen van minimum en maximum waarde, kracht, energie, entropie, \textit{skewness, kurtosis, interquartile range en mean absolute deviation} van het signaal)
+In het frequentie domein worden zes features bekomen per window voor elke as. Dit domein krijgt men door de \textit{Fast Fourier transform} uit te voeren. Het gaat over volgende features: \textit{band power of signal}, energie, magnitude, gemiddelde, maximum en minimum waarden van het signaal.
+In het wavelet domein worden negen sets van features bekomen, hier eveneens voor elk window en elke as. De \textit{discrete wavelet transform} wordt hiervoor gebruikt. 
+Deze studie concludeert dat tijdsdomein features betere resultaten geven. Dit is in contradictie met een eerder besproken studie \citep{ref15}. 
+
+Er werd bijgevolg gekozen om te focussen op features uit het tijdsdomein bestaande uit statistische features aangevuld met o.a. signal magnitude area. \\
+
+\citep{ref17} is een voorbeeld van een online activity recognition systeem. 
+Data processing kan op het mobiel apparaat zelf gedaan worden maar hierbij zijn beperkingen door gelimiteerde hardware  (minder data die kan gebufferd worden), de robuustheid van classificatie algoritmen en het aantal events dat kan geclassificeerd worden (energie consumptie). 
+
+Het onderzoek uitgevoerd tijdens deze thesis focust echter op een beperkt aantal specifieke rope skipping bewegingen. Energie consumptie zal bijgevolg geen hinderpaal vormen. Ook zijn huidige smartphones in staat om complexe berekeningen uit te voeren.
+
+\subsection{Rope Skipping}
+Een aantal studies omtrent bewegingsherkenning trainen een model bestaande uit onder andere de simpele voorwaartse sprong. Onderzoek naar specifieke rope skipping bewegingen ontbreekt echter. \\
+
+De studie \cite{ref51} probeert de bestaande problemen omtrent rope skipping (plaatseisend, luid, krassen) te omzeilen door middel van \textit{air jump rope}. Dit is het beoefenen van rope skipping zonder de noodzaak van een touw. Het touw wordt hierbij vervangen door een polystyrene bal. De draaibewegingen worden gedetecteerd met behulp van de IR camera van Microsoft Kinect.
+
+Vanwege het gebrek aan materiaal om deze aanpak tot een goed einde te brengen werd deze manier niet toegepast. Ook zorgt een fysiek touw tijdens het springen voor realistischere bewegingen. Dit bevordert bijgevolg de classificatie van verschillende sprongen.
+\\
+
+De studie \cite{ref52} gebruikt \textit{incremental learning} om verschillende dagelijkse activiteiten accuraat te herkennen. Incremental learning is een online learning algoritme dat het accuraatheidverlies bij incorrecte veralgemening vermijdt. Dit algoritme wordt toegepast op verschillende activiteiten waaronder rope skipping. \\
+
+Ook in \cite{ref53} wordt onderzoek gedaan naar het herkennen van dagelijkse activiteiten. Deze studie komt eveneens oppervlakkig in aanraking met rope skipping. \\
+
+Deze studies gaan niet dieper in op classificatie van specifieke rope skipping bewegingen en zijn bijgevolg van beperkt nut in het kader van dit onderzoek.
+\\
+
+\section{Inspanningsniveau}
+Verschillende personen kunnen dezelfde activiteit uitoefenen maar het inspanningsniveau hierbij kan sterk verschillen. In volgende studies wordt gezocht naar een metriek om dit niveau voor te stellen.\\
+
+De studie \citep{ref5} doet onderzoek naar het bepalen van het niveau van fysieke uitputting aan de hand van accelerometer data of een zelf aangegeven niveau van afzwakking.
+De schaal die hier wordt gebruikt is de \textit{Borg rating of perceived exertion}. Andere metrieken voor het meten hiervan zijn: hartslag, beschikbare kracht, tremor, veranderingen in postuur en multi joint coördinatie tussen verschillende segmenten. 
+Er wordt gewerkt in verschillende fasen. Eerst wordt de data verzameld, dan volgt een data preprocessing fase. In fase drie worden verschillende \textit{penalized regression models} toegepast op de data en in fase vier volgt een model evaluatie en test fase.
+\textit{Data cleaning} is een eerste taak in de data preprocessing fase. Hierbij wordt gecontroleerd op onder andere verkeerde data en ruis hierin.
+Hartslag werd genormaliseerd naar het interval met als ondergrens de rusthartslag en als bovengrens de maximum hartslag afhankelijk van leeftijd. 
+Hierna werd de \textit{jerk} berekend, dit is de verandering in versnelling en is een belangrijke indicator van fysieke uitputting. 
+
+Deze studie komt in aanraking met de mogelijkheid om een inspanningsniveau te bepalen met hartslagdata. Hier wordt echter niet dieper op ingegaan.
+
+\\
+
+In \citep{ref18} werd zuurstof gebruik (VO2) gebruikt als metriek voor fysieke uitputting. Kinderen oefenden activiteiten uit met een indirect calorimeter. Dit is een gas analyse systeem dat het volume van uitgeademde lucht meet alsook de O2 en C02 concentratie hierin. Een accelerometer (AG) en een hartslag monitor zijn eveneens gebruikte sensoren. Verschillen in VO2 en AG vector magnitude werden gemeten. Het doel van deze studie is om specifieke intensiteitsafbakeningspunten af te leiden zodanig dat activiteiten kunnen ingedeeld worden in volgende categorieën: SED (\textit{sedentary}), LPA (\textit{light physical activity}) en MVPA (\textit{moderate, vigourous physical activity}).
+Met deze data wordt het aantal METs berekend door het gemiddelde VO2 verbruik te delen door de voorspelde RMR (\textit{Resting Metabolic Rate}). Aan de hand van deze berekende METs werd de classificatie uitgevoerd in SED, LPA en MVPA.
+
+Vanwege het gebrek aan middelen om zuurstofverbruik te meten kan deze methode niet toegepast worden in het kader van deze thesis.\\
+
+In \citep{ref19} wordt gebruik gemaakt van METs om de mate van inspanning op te delen in bepaalde niveaus. Hiervoor moet schatting voor de maximum hartslag bepaald worden. 
+Gemiddelde zuurstof inname werd gemeten en geconverteerd naar METs. Waarden voor afbakening werden gevonden die hoger lagen dan eerdere onderzoeken. Een tweede bevinding was dat individuen met betere conditie hebben een hogere grens uitgedrukt in METs.
+
+Deze studie gebruikt de MET metriek als middel om de mate van inspanning voor te stellen. De MET metriek is uitermate geschikt in het kader van dit onderzoek. Er kan echter, zoals eerder vermeld, geen gebruik gemaakt worden van zuurstof afhankelijke metrieken. \\
+
+De applicatie ontwikkeld in \citep{ref21} gaat persoonlijke suggesties geven voor fysieke activiteit. Elke week wordt een doel berekend op basis van het al dan niet bereiken van doelen in vorige weken en op basis van \textit{SE beliefs}. SE beliefs zijn antwoorden op vragen die aan de gebruiker gesteld werden over de uitgevoerde activiteit. De SE score is het gemiddelde van de gegeven antwoorden. Het wekelijks doel kan eveneens gesplitst worden in dagelijkse doelen. Dit systeem houdt geen rekening met de context, wel laat het de gebruiker handmatig suggesties verplaatsen op basis van bijvoorbeeld werkuren of het weer. Het doel wordt uitgedrukt in METs op basis van hartslag. Er wordt gekeken hoelang men heeft doorgebracht in de gemiddelde intensiteitszone (6*MAXHR/10, 7 * MAXHR/10) en hoelang in de intensieve zone (7*MAXHR/10, 8*MAXHR/10).  De algemene richtlijnen zeggen dat 600 METs per week nodig is om een gezond leven te leiden. Deze methode op basis van hartslag is zeer geschikt voor gebruik tijdens deze thesis. Bijgevolg werd dit dan ook toegepast.
+Voor de berekening van het wekelijks doel werd gebruik gemaakt van een \textit{Dynamic Decision Network} (DDN). Dit is een opeenvolging van simpele \textit{Bayesian Networks}. 
+
+Deze studie gebruikt een methode om, vanuit de tijd gespendeerd in iedere hartslagzone, een MET score te verkrijgen. Dit kan toegepast worden in dit onderzoek. Het idee om via SE beliefs een persoonlijker doel te verkrijgen wordt niet toegepast. Dit omdat de applicatie ontwikkeld in deze thesis volledig automatisch functioneert.
+
+\section{Doel}
+De aanwezigheid van een doel is essentieel voor de werking van een gezondheidsapplicatie. Op die manier wordt namelijk het persoonlijke aspect verwezenlijkt.
+Dynamisch doelen zetten kan gebeuren op basis van complexe machine learning algoritmen of simpelere heuristieken. Volgende studies geven enkele applicaties.\\
+
+De studie \citep{ref4} heeft als doel om fysieke activiteit te verhogen tijdens werkdagen. Hiervoor wordt een stappenteller ontwikkeld in de vorm van een doelgerichte applicatie. De gebruiker voert een doel in, de applicatie zal dan een schatting geven van de waarschijnlijkheid dat het doel gehaald wordt. Data werd verzameld met behulp van de Fitbit Flex. Deze werd gecleand, gereformat en gepreprocessed. Incomplete dagen werden eveneens verwijderd, net zoals dagen met geen stappen en weekend dagen. Er werd aan \textit{feature constructing} gedaan door uur van de werkdag, aantal stappen tijdens dat uur enzovoort toe te voegen. Het interval van 7 tot 18 uur werd bekeken aangezien dit de uren zijn die de meesten doorbrengen op hun werk.
+Het voorspellen of een bepaald doel zal behaald worden is een binair supervised classificatie probleem. Het is echter onmogelijk om op voorhand te bepalen welk algoritme het best zal presteren, ook al bestaan er bepaalde richtlijnen. Ze moeten dus empirisch getest worden. De gebruikte algoritmes zijn: \textit{adaboost, decision trees, KNeighborsClassifier, Logistic Regression, Neural Network, Stochastic Gradient Descent, Random Forest en support Vector Classification}. Deze keuze werd gebaseerd op de flow chart van scikit learn en de cheat sheet van microsoft azure. 
+
+De eerste selectie van bruikbare algoritmen in dit onderzoek werd eveneens volbracht gebruikmakend van deze cheat sheets. Het doel echter zal niet via machine learning algoritmen bepaald worden vanwege de onnodige complexiteit.\\
+
+In \citep{ref11} bestudeert men doelen stellen aan de hand van \textit{reinforcement learning}. Goal setting is namelijk een belangrijke factor in veroorzaken van verandering in gedrag. Dynamisch doelen stellen doet dit nog veel meer. Dit kan gebeuren door simpele heuristieken zoals het nemen van de 60ste percentile van de stappen genomen in de voorbije tien dagen. Een complexere benadering in de vorm van machine learning maakt gebruik van reinforcement learning. Het \textit{behavioral analytics} algoritme gebruikt inverse reinforcement learning om een model te bekomen vanuit historische data. Hierna wordt dit model gebruikt om realistische doelen te genereren.
+
+Deze thesis maakt gebruik van een gemiddelde waarde voor de berekening van doelen. Aangezien dit algoritme zal geïmplementeerd worden in android is een additioneel machine learning model overkill.\\
+
+De studie \citep{ref20} ontwikkelt een applicatie die gebruikers ertoe moet aanzetten om gewicht te verliezen. Dit wordt gedaan door bij registratie een aantal parameters te verzoeken van de gebruiker: leeftijd, geslacht, lengte, gewicht en een schatting van de ingenomen calorieën per dag. Met deze gegevens wordt het aantal calorieën berekend die de persoon moet verliezen en het aantal calorieën die moeten genomen worden om het uiteindelijke gewicht te behouden. Dit doel wordt niet bijgewerkt met gemonitorde gegevens van calorie-inname.
+
+Deze studie zorgt voor de creatie van een statisch doel, wat in het kader van deze thesis, niet bruikbaar is.\\
+
+In de studie \citep{ref22} maakt men gebruik van zelf ingestelde doelen.
+\textit{Self set goals} zijn direct gerelateerd aan SE, aangezien mensen meer geneigd zijn om een doel te zetten die ze denken aan te kunnen. In deze studie wordt hiervan gebruik gemaakt. Het doel wordt dus gezet door de gebruiker. Gebruikers starten te stappen met een duur afhankelijk van hun zelfgekozen doel. Elke week worden vijf minuten bijgeteld bij deze duur. De bedoeling is om uiteindelijk het vooropgestelde doel te bereiken in de laatste week van het programma.
+
+Het concept van self set goals is niet toepasbaar op deze thesis. Het is namelijk de bedoeling een aanbevelingssysteem te ontwikkelen op basis van hartslagdata.
+
+\section{Aanbevelingen}
+Aanbevelingssystemen zijn een hot topic bij grote bedrijven zoals netflix, facebook enz. Er is hier dan ook veel onderzoek naar gedaan.\\
+
+De studie \citep{ref12} onderzoekt welke machine learning algoritmes vooral gebruikt worden in aanbevelingssystemen. Er werd geconcludeerd dat studies meestal werken met \textit{neighborhood based collaborative filtering}, gevolgd door classifier gebaseerd \textit{content-based filtering} en model gebaseerd collaborative filtering op respectievelijk de tweede en derde plaats. Indien gebruik gemaakt wordt van machine learning is dit in 80\% van de gevallen door middel van supervised learning.
+
+Het aanbevelingsalgoritme beschreven in deze paper zal geen gebruik maken van machine learning technieken vanwege de onnodige complexiteit binnen een android applicatie. Ook zal het algoritme gebruik maken van een content gebaseerde aanpak waarvoor een eigen methodiek zal ontwikkeld worden. \\
+
+In \citep{ref13} implementeert men een \textit{context-aware} aanbevelingssysteem aan de hand van beslissingsbomen.
+Een beslissingsboom gebaseerd CARS framework wordt als volgt geïmplementeerd. Een afzonderlijke boom is aanwezig voor elke gebruiker (ID3 gebaseerd op content-based filtering) Deze boom houdt rekening met de context. Hierna gebeurt collaborative filtering. De classifier vereist input data van de vorm: user, item, contextuele features, rating. 
+De beslissingsboom bestaat uit 2 stappen: inductie en \textit{inference}. De informatie inhoud van elk contextueel feature wordt gebruikt als split criterium.
+
+De uitgevoerde studie in deze paper implementeert het contextuele aspect door rekening te houden met het aantal gemaakte fouten tijdens elke beweging. Hiervoor worden geen machine learning methodes gebruikt.\\
+
+In \citep{ref23} werd een widget gemaakt die gebruikersactiviteit opslaat en hiermee voorspelt welke acties de gebruiker gaat ondernemen. De data die bekeken wordt zijn sms-berichten, telefoongesprekken en gebruikte applicaties. Het aanbevelingsalgoritme is volledig gefocust op SQL functionaliteit. Bij bijvoorbeeld het aanbevelen van de meest waarschijnlijke telefoonoproep wordt de totale duur van elke oproep, gefilterd door dag van de week en gegroepeerd met contact nummer. De grootste duur wordt dan gegeven als voorspelling.
+Gebaseerd op de aanpak in deze studie werd het aanbevelingssysteem in deze thesis ontwikkeld.
+
+
+

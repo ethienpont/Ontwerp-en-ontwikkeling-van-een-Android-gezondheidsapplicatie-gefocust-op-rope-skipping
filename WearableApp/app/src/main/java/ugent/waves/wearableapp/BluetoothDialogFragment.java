@@ -10,6 +10,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
 
+//Dialog for enabling bluetooth on smartphone
 public class BluetoothDialogFragment extends DialogFragment {
 
     public static BluetoothDialogFragment newInstance() {
@@ -21,8 +22,8 @@ public class BluetoothDialogFragment extends DialogFragment {
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         // Use the Builder class for convenient dialog construction
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setMessage("Please enable bluetooth on smartphone for optimal experience.")
-                .setNegativeButton("ignore", new DialogInterface.OnClickListener() {
+        builder.setMessage("Please enable bluetooth on smartphone.")
+                .setNegativeButton("Next", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         ((SessionActivity)getActivity()).chooseNode();
                     }

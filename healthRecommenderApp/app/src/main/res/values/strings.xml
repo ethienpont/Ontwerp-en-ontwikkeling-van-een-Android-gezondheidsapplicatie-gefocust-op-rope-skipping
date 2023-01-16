@@ -20,4 +20,10 @@
     <string name="title_activity_login">LoginActivity</string>
     <string name="drawer_open">drawer open</string>
     <string name="drawer_close">drawer closed</string>
+    <string name="SignIn">Sign in</string>
+    <string name="Pending">Pending</string>
+    <string name="age_prompt">Fill in your age please</string>
+    <string name="start">Start</string>
+    <string name="bluetooth_prompt">Bluetooth connection</string>
+    <string name="cancel">Cancel</string>
 </resources>

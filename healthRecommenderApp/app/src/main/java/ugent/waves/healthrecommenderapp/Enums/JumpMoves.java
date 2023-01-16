@@ -1,15 +1,12 @@
 package ugent.waves.healthrecommenderapp.Enums;
 
-//todo: kijk of numering juist
+//Rope skipping moves
 public enum JumpMoves {
-    FAST(0),
-    SIDE_SWING(1),
-    SLOW(2),
-    FORWARD_180(3),
-    BACKWARD_180(4),
-    CROSS_OVER(5),
-    MISTAKE(6),
-    OTHER(-1);
+    CROSS_OVER(0),
+    FAST(1),
+    RUN(2),
+    SLOW(3),
+    SIDE_SWING(4);
 
     private int jumpIndex;
 
@@ -24,19 +21,17 @@ public enum JumpMoves {
 
     public static String getJumpName(int i) {
         if(i == 0){
-            return "Jump fast";
-        } else if(i == 1){
-            return "Side swing";
-        } else if(i == 2){
-            return "Jump slow";
-        } else if(i == 3){
-            return "Forward 180";
-        } else if(i == 4){
             return "Cross over";
-        } else if(i == 5){
-            return "Mistake";
+        } else if(i == 1){
+            return "Jump fast";
+        } else if(i == 2){
+            return "Jump run";
+        } else if(i == 3){
+            return "Jump slow";
+        } else if(i == 4){
+            return "Side swing";
         }
-        return "Other";
+        return "Unknown";
     }
 
     public int getValue() {

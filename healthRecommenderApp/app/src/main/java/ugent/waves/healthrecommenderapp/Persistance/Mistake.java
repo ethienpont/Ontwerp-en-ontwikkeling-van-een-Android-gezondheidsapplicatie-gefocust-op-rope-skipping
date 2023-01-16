@@ -9,6 +9,9 @@ public class Mistake {
     @PrimaryKey(autoGenerate = true)
     private int uid;
 
+    @ColumnInfo(name = "userId")
+    private String userId;
+
     @ColumnInfo(name = "time")
     private int time;
 
@@ -59,5 +62,13 @@ public class Mistake {
 
     public void setWeek(int week) {
         this.week = week;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 }

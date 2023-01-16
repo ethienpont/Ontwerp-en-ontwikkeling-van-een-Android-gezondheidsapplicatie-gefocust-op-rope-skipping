@@ -8,33 +8,28 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import java.util.List;
-
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView.Adapter;
 import androidx.recyclerview.widget.RecyclerView.ViewHolder;
 import ugent.waves.healthrecommenderapp.NavigationActivity;
+import ugent.waves.healthrecommenderapp.Persistance.Session;
 import ugent.waves.healthrecommenderapp.R;
-import ugent.waves.healthrecommenderapp.dataclasses.SessionHistoryData;
 
 public class SessionHistoryAdapter extends Adapter<SessionHistoryAdapter.SessionViewHolder> {
     private final Context context;
-    private List<SessionHistoryData> mDataset;
+    private Session[] mDataset;
     private SessionHistoryFragment mFragment;
 
-    // Provide a reference to the views for each data item
-    // Complex data items may need more than one view per item, and
-    // you provide access to all the views for a data item in a view holder
     public static class SessionViewHolder extends ViewHolder{
         public ImageView imageView;
-        public TextView activity;
+        public TextView mistakes;
         public TextView turns;
         public TextView mets;
         public RelativeLayout relativeLayout;
         public SessionViewHolder(View itemView) {
             super(itemView);
             this.imageView = (ImageView) itemView.findViewById(R.id.thumbnail);
-            this.activity = (TextView) itemView.findViewById(R.id.activity);
+            this.mistakes = (TextView) itemView.findViewById(R.id.mistakes);
             this.turns = (TextView) itemView.findViewById(R.id.turns);
             this.mets = (TextView) itemView.findViewById(R.id.points);
             relativeLayout = (RelativeLayout)itemView.findViewById(R.id.layout);
@@ -42,7 +37,7 @@ public class SessionHistoryAdapter extends Adapter<SessionHistoryAdapter.Session
     }
 
     // Provide a suitable constructor (depends on the kind of dataset)
-    public SessionHistoryAdapter(List<SessionHistoryData> myDataset, Context c) {
+    public SessionHistoryAdapter(Session[] myDataset, Context c) {
         mDataset = myDataset;
         context = c;
     }
@@ -59,21 +54,20 @@ public class SessionHistoryAdapter extends Adapter<SessionHistoryAdapter.Session
     // Replace the contents of a view (invoked by the layout manager)
     @Override
     public void onBindViewHolder(SessionViewHolder holder, final int position) {
-        holder.turns.setText(mDataset.get(position).getTurns() + " turns");
-        holder.mets.setText(mDataset.get(position).getMets_points() + " points");
-        holder.activity.setText(mDataset.get(position).getDescription());
-        holder.imageView.setImageResource(mDataset.get(position).getImgId());
+        holder.turns.setText(mDataset[position].getTurns() + " turns");
+        holder.mistakes.setText(mDataset[position].getMistakes() + " mistake(s)");
+        holder.mets.setText(mDataset[position].getMets() + " points");
         holder.relativeLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                fragmentJump(mDataset.get(position));
+                fragmentJump(mDataset[position]);
             }
         });
 
     }
 
-    private void fragmentJump(SessionHistoryData mItemSelected) {
-        mFragment = SessionHistoryFragment.newInstance(mItemSelected.getSessionId());
+    private void fragmentJump(Session mItemSelected) {
+        mFragment = SessionHistoryFragment.newInstance(mItemSelected.getUid());
         switchContent(R.id.flContent, mFragment);
     }
 
@@ -85,9 +79,8 @@ public class SessionHistoryAdapter extends Adapter<SessionHistoryAdapter.Session
 
     }
 
-    // Return the size of your dataset (invoked by the layout manager)
     @Override
     public int getItemCount() {
-        return mDataset.size();
+        return mDataset.length;
     }
 }

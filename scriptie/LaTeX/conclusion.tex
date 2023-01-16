@@ -1,0 +1,14 @@
+\chapter*{Conclusie}
+Deze thesis onderzocht de mogelijkheden met betrekking tot herkenning van rope skipping bewegingen. Door gelimiteerde toegang tot verschillende sensoren konden enkel pols bewegingen onderzocht worden waardoor het aantal bewegingen gereduceerd werd. Variaties aangaande voetposities komen namelijk vaak voor binnen rope skipping.
+Niettegenstaande werd bewezen dat verschillende bewegingen zich van elkaar onderscheiden louter met data afkomstig van polsbewegingen. In een eerste fase werd onderzocht welk machine learning algoritme het meest geschikt is voor dit classificatie probleem. Het convolutional neural network, afgekort CNN, gaf de beste resultaten. Vervolgens werd, toegepast op CNN, de meest optimale window grootte onderzocht. Hierbij werd gestart vanuit de hypothese dat een sprong gemiddeld één seconde duurt. Dit werd bevestigd tijdens het onderzoek. Windows van één seconde en meer bleken namelijk goede accuraatheden te leveren. Daaropvolgend werd nagegaan welke hoeveelheid overlapping zorgt voor de hoogste performantie. Hieruit bleek dat enige overlapping gunstig is. Overlappingen van 30, 50 en 70 procent resulteerden in gelijkaardige accuraatheden. Er werd geopteerd voor 30\% omwille van het risico op overfitting bij hogere percentages. 
+Er werd eveneens nagegaan in welke mate variaties binnen een klasse resulteren in verlaging van de accuraatheid. Na splitsing werd een lichte stijging in accuraatheid vastgesteld bij de afzonderlijke modellen.
+Als laatste experiment werd nagegaan welk effect ensemble learning heeft op de performantie. Hierbij werd geconstateerd dat meerdere samenwerkende modellen zorgen voor hogere accuraatheid.
+
+Vervolgens werd dit model gebruikt binnen het kader van een gezondheidsapplicatie. Hierbij werd aangetoond dat aanbevelingen op basis van inspanningspunten en de persoonlijke voorkeur van de gebruiker kunnen geproduceerd worden. Via het weergeven van fouten en aantal draaiingen werd eveneens voor meer aanmoediging gezorgd. Op die manier ontstond een persoonlijk bewegingspatroon.
+
+Door rekening te houden met de maximale hartslag gebaseerd op leeftijd kunnen te zware inspanningen gedetecteerd en gerapporteerd worden.
+
+Er werd bijgevolg een antwoord geboden op de onderzoeksvragen aangehaald in de introductie.
+
+Inzake toekomstig werk zijn er nog enkele mogelijkheden.
+Vanwege de corona-maatregelen bleek het onmogelijk om voldoende proefpersonen te verkrijgen. Toekomstige studies kunnen het ontwikkelde model op deze manier nog verder generaliseren. Ook kan bij de gezondheidsapplicatie rekening gehouden worden met het stress-niveau en slaappatroon van de gebruiker. Op deze manier kunnen de aanbevelingen nog persoonlijker gemaakt worden. Ook kan nog meer rekening gehouden worden met gebruikerscontext inzake wekelijks patroon.

@@ -1,0 +1,77 @@
+\documentclass{report}
+\usepackage[utf8]{inputenc}
+\usepackage{natbib}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage{subfig}
+\usepackage{floatrow}
+\usepackage[dutch]{babel}
+\usepackage{pdfpages}
+\PassOptionsToPackage{hyphens}{url}\usepackage{hyperref}
+\floatsetup[table]{capposition=top}
+
+\usepackage{afterpage}
+
+\newcommand\blankpage{%
+    \null
+    \thispagestyle{empty}%
+    \addtocounter{page}{-1}%
+    \newpage}
+    
+    \usepackage{mathptmx}
+\usepackage[11pt]{moresize}
+
+\usepackage[acronym,footnote,nonumberlist]{glossaries} 
+\usepackage{glossary-mcols}
+\include{Glossary}
+\makeglossaries
+\glossarystyle{mcolindex}
+
+\renewcommand*\contentsname{Inhoudsopgave}
+\renewcommand{\listfigurename}{Figurenlijst}
+\renewcommand{\listtablename}{Tabellenlijst}
+
+\setlength\parindent{0pt}
+\begin{document}
+\pagenumbering{roman}
+
+\includepdf[page=-]{voorblad/titel} 
+\afterpage{\blankpage}
+
+\include{Preambule}
+
+\include{dankwoord}
+\include{abstract}
+
+\includepdf[page=- ,  pagecommand={\thispagestyle{plain}}, scale=0.9]{voorblad/extended_abstract} 
+
+\tableofcontents
+\newpage
+
+\listoffigures
+\newpage
+
+\listoftables
+\newpage
+
+\include{afkortingen}
+
+\pagenumbering{arabic}
+
+\include{introduction}
+
+\include{literatuurstudie}
+
+\include{apparatuur}
+
+\include{rope_skipping}
+
+\include{gezondheidsapplicatie}
+
+\include{conclusion}
+
+\bibliographystyle{unsrt}
+\bibliography{references}
+\afterpage{\blankpage}
+\includepdf[page=-]{voorblad/titel} 
+\end{document}

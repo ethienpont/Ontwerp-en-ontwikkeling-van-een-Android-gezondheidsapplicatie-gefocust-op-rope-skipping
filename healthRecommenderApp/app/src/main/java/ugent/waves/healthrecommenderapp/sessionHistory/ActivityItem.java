@@ -3,16 +3,14 @@ package ugent.waves.healthrecommenderapp.sessionHistory;
 public class ActivityItem implements ViewType{
 
     private int mistakes;
-    private double mets;
     private String start;
     private String end;
     private int activity;
 
-    public ActivityItem(String start, String end, int activity, double mets, int mis){
+    public ActivityItem(String start, String end, int activity, int mis){
         this.start = start;
         this.end = end;
         this.activity = activity;
-        this.mets = mets;
         this.mistakes = mis;
     }
 
@@ -31,10 +29,6 @@ public class ActivityItem implements ViewType{
 
     public int getActivity() {
         return activity;
-    }
-
-    public double getMets() {
-        return mets;
     }
 
     public int getMistakes() {

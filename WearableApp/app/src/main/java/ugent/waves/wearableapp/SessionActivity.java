@@ -1,107 +1,42 @@
 package ugent.waves.wearableapp;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
-import androidx.core.content.ContextCompat;
-import androidx.core.content.PermissionChecker;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import androidx.wear.ambient.AmbientMode;
 import androidx.wear.ambient.AmbientModeSupport;
 
-import android.Manifest;
-import android.app.AlertDialog;
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.media.RingtoneManager;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.provider.Settings;
-import android.support.wearable.activity.WearableActivity;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.util.Log;
-import android.view.View;
 
-import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-import com.google.android.gms.auth.api.signin.GoogleSignInClient;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.common.Scopes;
-import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.common.api.Scope;
-import com.google.android.gms.fitness.Fitness;
-import com.google.android.gms.fitness.FitnessActivities;
-import com.google.android.gms.fitness.data.DataPoint;
-import com.google.android.gms.fitness.data.DataSource;
-import com.google.android.gms.fitness.data.DataType;
-import com.google.android.gms.fitness.data.Field;
-import com.google.android.gms.fitness.data.Session;
-import com.google.android.gms.fitness.data.Value;
-import com.google.android.gms.fitness.request.DataSourcesRequest;
-import com.google.android.gms.fitness.request.OnDataPointListener;
-import com.google.android.gms.fitness.request.SensorRequest;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.android.gms.wearable.MessageClient;
 import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.NodeClient;
 import com.google.android.gms.wearable.Wearable;
 
-import org.tensorflow.lite.Interpreter;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
-//TODO: ambedient
-public class SessionActivity extends AppCompatActivity implements SensorEventListener, AmbientMode.AmbientCallbackProvider {
+public class SessionActivity extends AppCompatActivity implements SensorEventListener, AmbientModeSupport.AmbientCallbackProvider {
 
     private String TAG="SessionActivity";
     private String ACCELEROMETER = "/ACCELEROMETER";
 
-    private String NOTIFICATION = "/SEND_NOTIFICATION";
-    private String NOTIFICATION_MESSAGE = "/NOTIFICATION_MESSAGE";
+    private String NOTIFICATION_MESSAGE = "NOTIFICATION_MESSAGE";
 
     private SensorManager sensorManager;
     private Sensor acceleroSensor;
-    private List<Map> accelero_dataPoints;
-    private List<Map> heart_rate_dataPoints;
-    private String currentSession;
     private AmbientModeSupport.AmbientController ambientController;
-    private Map<String,Object> sessionData;
     private Sensor heartRateSensor;
     private NodeClient nodeClient;
     private MessageClient messageClient;
@@ -123,13 +58,10 @@ public class SessionActivity extends AppCompatActivity implements SensorEventLis
         setContentView(R.layout.activity_session);
 
         app = (wearableAppApplication) this.getApplicationContext();
-
         // Enables Always-on
         ambientController = AmbientModeSupport.attach(this);
+        ambientController.setAmbientOffloadEnabled(true);
 
-        LocalBroadcastManager.getInstance(this).registerReceiver((broadcast_receiver),
-                new IntentFilter(NOTIFICATION)
-        );
 
         sensorManager = (SensorManager) getSystemService(this.SENSOR_SERVICE);
         acceleroSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -138,29 +70,34 @@ public class SessionActivity extends AppCompatActivity implements SensorEventLis
         nodeClient = Wearable.getNodeClient(this);
         messageClient = Wearable.getMessageClient(this);
 
-        Fragment f = SessionFragment.newInstance(null);
+        Fragment f = SessionFragment.newInstance();
         switchContent(R.id.container, f);
+
     }
 
-    //TODO: broadcast doesnt arrive
-    BroadcastReceiver broadcast_receiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            final String id = intent.getStringExtra(NOTIFICATION_MESSAGE);
-            nodeClient.getConnectedNodes()
-                    .addOnSuccessListener(new OnSuccessListener<List<Node>>() {
-                        @Override
-                        public void onSuccess(List<Node> nodes) {
-                            for (Node n : nodes) {
-                                if(n.getId().equals(id)){
-                                    nodeChosen = n;
-                                }
+    //Start session from smartphone
+    @Override
+    protected void onNewIntent(Intent intent) {
+        // continue with your work here
+        super.onNewIntent(intent);
+        final String id = intent.getStringExtra(NOTIFICATION_MESSAGE);
+        nodeClient.getConnectedNodes()
+                .addOnSuccessListener(new OnSuccessListener<List<Node>>() {
+                    @Override
+                    public void onSuccess(List<Node> nodes) {
+                        for (Node n : nodes) {
+                            if(n.getId().equals(id)){
+                                nodeChosen = n;
                             }
-                            startSession();
                         }
-                    });
-        }
-    };
+                        try{
+                            startSession();
+                        } catch (Exception e){
+                            e.printStackTrace();
+                        }
+                    }
+                });
+    }
 
     @Override
     protected void onResume() {
@@ -177,11 +114,11 @@ public class SessionActivity extends AppCompatActivity implements SensorEventLis
         super.onStop();
     }
 
+    //Send start message
     private void startRopeSkippingSession() {
-        accelero_dataPoints = new ArrayList<>();
-        heart_rate_dataPoints = new ArrayList<>();
         sensorManager.registerListener(this, heartRateSensor, SensorManager.SENSOR_DELAY_NORMAL);
         sensorManager.registerListener(this, acceleroSensor, SensorManager.SENSOR_DELAY_NORMAL);
+
         messageClient.sendMessage(nodeChosen.getId(), START, new byte[]{})
                                     .addOnSuccessListener(new OnSuccessListener<Integer>() {
                                         @Override
@@ -191,9 +128,10 @@ public class SessionActivity extends AppCompatActivity implements SensorEventLis
                                     });
     }
 
+    //Send end message
     private void endRopeSkippingSession() {
         sensorManager.unregisterListener(this);
-        currentSession = UUID.randomUUID().toString();
+
         messageClient.sendMessage(nodeChosen.getId(), STOP, new byte[]{})
                                     .addOnSuccessListener(new OnSuccessListener<Integer>() {
                                         @Override
@@ -203,13 +141,16 @@ public class SessionActivity extends AppCompatActivity implements SensorEventLis
                                     });
     }
 
+    //Replace fragment
     public void switchContent(int id, Fragment fragment) {
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         ft.replace(id, fragment, fragment.toString());
         ft.addToBackStack(null);
-        ft.commit();
+        ft.commitAllowingStateLoss();
     }
 
+
+    //Initialize nodefragment with available nodes
     public void chooseNode(){
         nodeClient.getConnectedNodes()
                 .addOnSuccessListener(new OnSuccessListener<List<Node>>() {
@@ -226,6 +167,8 @@ public class SessionActivity extends AppCompatActivity implements SensorEventLis
                                       });
     }
 
+
+    //Set node name
     public void setNode(final String name){
         nodeClient.getConnectedNodes()
                 .addOnSuccessListener(new OnSuccessListener<List<Node>>() {
@@ -239,42 +182,47 @@ public class SessionActivity extends AppCompatActivity implements SensorEventLis
                         }
                     }
                 });
+
     }
 
-    //start session begint hier
+    //Show bluetooth dialog
     public void showDialog(){
+
         BluetoothDialogFragment b = BluetoothDialogFragment.newInstance();
         FragmentManager fm = getSupportFragmentManager();
         b.show(fm, "");
-        //transaction.commit();
     }
 
+    //Initialize heartratedisplayfragment and start session
     public void startSession() {
-        Fragment f = HeartRateDisplayFragment.newInstance(null);
+        Fragment f = HeartRateDisplayFragment.newInstance();
         displayFragment = (HeartRateDisplayFragment) f;
         switchContent(R.id.container, f);
         startRopeSkippingSession();
     }
 
 
+    //Stop session
     public void stopSession() {
         endRopeSkippingSession();
-        Fragment f = SessionFragment.newInstance(null);
+        Fragment f = SessionFragment.newInstance();
         switchContent(R.id.container, f);
     }
 
-    //TODO: test batch grootte
+    //Catch sensorEvents and send corresponding message
     @Override
     public void onSensorChanged(final SensorEvent event) {
-        //TODO: leeftijd
-        if(event.values[0] > 100){
+        //Calculate HRMAX and send alarm if above
+        int HRMAX = app.getAge() == 0 ? 195 : 220 - app.getAge();
+        if(event.values[0] > HRMAX){
             sendAlarm();
         }
-
+        //Send accelerometer data in batches
         if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
             if(samples_accelerometer == null){
                 samples_accelerometer = new ArrayList<>();
-            } else if(samples_accelerometer.size() == (104*4)){
+            } else if(samples_accelerometer.size() >= (104*4)){
+
                 messageClient.sendMessage(nodeChosen.getId(),ACCELEROMETER, toByteArray(samples_accelerometer))
                         .addOnSuccessListener(new OnSuccessListener<Integer>() {
                             @Override
@@ -284,55 +232,49 @@ public class SessionActivity extends AppCompatActivity implements SensorEventLis
                         });
                 samples_accelerometer = null;
             }else{
-                byte[] byteArray = FloatArray2ByteArray(event.values, System.nanoTime());
+                long time = System.nanoTime();
+                byte[] byteArray = FloatArray2ByteArray(event.values, time);
                 for(byte b: byteArray){
                     samples_accelerometer.add(b);
                 }
             }
-
-        } else if(event.sensor.getType() == Sensor.TYPE_HEART_RATE){
+        }
+        //Send heartrate data in batches
+        else if(event.sensor.getType() == Sensor.TYPE_HEART_RATE){
             if (displayFragment.isAdded() && displayFragment.isVisible() && displayFragment.getUserVisibleHint()) {
                 displayFragment.showHeartRate(event.values[0]);
             }
 
             if(samples_heartbeat == null){
                 samples_heartbeat = new ArrayList<>();
-            } else if(samples_heartbeat.size() == (52*2)){
-                messageClient.sendMessage(nodeChosen.getId(),HEARTRATE, toByteArray(samples_heartbeat))
+            } else if(samples_heartbeat.size() >= 52){
+                byte[] a = toByteArray(samples_heartbeat);
+                int s = event.values.length;
+                messageClient.sendMessage(nodeChosen.getId(),HEARTRATE, a)
                         .addOnSuccessListener(new OnSuccessListener<Integer>() {
                             @Override
                             public void onSuccess(Integer integer) {
                             }
                         });
+
                 samples_heartbeat = null;
             }else{
-                for(byte b: FloatArray2ByteArray(event.values, System.nanoTime())){
+                long time = System.nanoTime();
+                for(byte b: FloatArray2ByteArray(event.values, time)){
                     samples_heartbeat.add(b);
                 }
             }
         }
     }
 
-    //TODO: vibrate
+    //Vibrate during alarm
     private void sendAlarm() {
-        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        NotificationChannel mChannel = new NotificationChannel("channel", "yourSubjectName",NotificationManager.IMPORTANCE_HIGH);
-
-        notificationManager.createNotificationChannel(mChannel);
-
-        NotificationCompat.Builder b = new NotificationCompat.Builder(this, mChannel.getId());
-
-        //FIX android O bug Notification add setChannelId("shipnow-message")
-        b.setSmallIcon(R.drawable.stop_icon) // vector (doesn't work with png as well)
-                .setContentTitle("get")
-                .setContentText("test")
-                .setChannelId(mChannel.getId())
-                .setDefaults(Notification.DEFAULT_ALL)
-                .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION));
-
-        notificationManager.notify(0, b.build());
+        Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+        long[] vibrationPattern = {0, 500, 50, 300};
+        vibrator.vibrate(VibrationEffect.createWaveform(vibrationPattern, -1));
     }
 
+    //List of bytes to bytearray for sending in message
     private byte[] toByteArray(List<Byte> samples_accelerometer) {
         byte[] byteArray = new byte[samples_accelerometer.size()];
         int i = 0;
@@ -343,15 +285,8 @@ public class SessionActivity extends AppCompatActivity implements SensorEventLis
         return byteArray;
     }
 
-    public void signOut(){
-        app.getClient().signOut();
-
-        Intent intent = new Intent(this, LoginActivity.class);
-        startActivity(intent);
-    }
-
+    //Transform float array to byte array
     public byte[] FloatArray2ByteArray(float[] values, Long time){
-        Log.d(TAG, time+"");
         ByteBuffer buffer = ByteBuffer.allocate(4*values.length+4);
 
         buffer.putFloat(time.floatValue());
@@ -365,16 +300,16 @@ public class SessionActivity extends AppCompatActivity implements SensorEventLis
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        Log.d("", "");
+
     }
 
     @Override
-    public AmbientMode.AmbientCallback getAmbientCallback() {
+    public AmbientModeSupport.AmbientCallback getAmbientCallback() {
         return new MyAmbientCallback();
     }
 
 
-    private class MyAmbientCallback extends AmbientMode.AmbientCallback {
+    private class MyAmbientCallback extends AmbientModeSupport.AmbientCallback {
         @Override
         public void onEnterAmbient(Bundle ambientDetails) {
             // Handle entering ambient mode

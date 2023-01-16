@@ -11,19 +11,17 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
+
+import ugent.waves.healthrecommenderapp.Enums.JumpMoves;
+import ugent.waves.healthrecommenderapp.HelpClasses.Constants;
 import ugent.waves.healthrecommenderapp.Persistance.Recommendation;
 import ugent.waves.healthrecommenderapp.R;
 import ugent.waves.healthrecommenderapp.StartSessionActivity;
 
 public class RecommendationAdapter extends RecyclerView.Adapter<RecommendationAdapter.RecommendationViewHolder> {
-    private static final String ACTIVITY_ID = "ACTIVITY_ID";
-    private static final String RECOMMENDATION_ID = "RECOMMENDATION_ID";
     private final Context context;
     private Recommendation[] mDataset;
 
-    // Provide a reference to the views for each data item
-    // Complex data items may need more than one view per item, and
-    // you provide access to all the views for a data item in a view holder
     public static class RecommendationViewHolder extends RecyclerView.ViewHolder {
         public ImageView imageView;
         public TextView activity;
@@ -40,13 +38,13 @@ public class RecommendationAdapter extends RecyclerView.Adapter<RecommendationAd
         }
     }
 
-    // Provide a suitable constructor (depends on the kind of dataset)
-    public RecommendationAdapter(Recommendation[] myDataset, Context c) {
-        mDataset = myDataset;
+    // Provide a suitable constructor
+    public RecommendationAdapter(Recommendation[] d, Context c) {
+        mDataset = d;
         context = c;
     }
 
-    // Create new views (invoked by the layout manager)
+    // Create new views
     @Override
     public RecommendationAdapter.RecommendationViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         LayoutInflater layoutInflater = LayoutInflater.from(parent.getContext());
@@ -55,31 +53,40 @@ public class RecommendationAdapter extends RecyclerView.Adapter<RecommendationAd
         return viewHolder;
     }
 
-    // Replace the contents of a view (invoked by the layout manager)
     @Override
     public void onBindViewHolder(RecommendationAdapter.RecommendationViewHolder holder, final int position) {
-        holder.duration.setText(mDataset[position].getDuration() + " duration");
+        holder.duration.setText(toMinutes(mDataset[position].getDuration()));
         holder.pending.setText("");
-        holder.activity.setText(mDataset[position].getActivity()+"");
-        holder.imageView.setImageResource(R.drawable.running);
+        holder.activity.setText(JumpMoves.getJumpName(mDataset[position].getActivity())+"");
+        holder.imageView.setImageResource(R.drawable.heart_icon);
         if(mDataset[position].isPending()){
-            holder.pending.setText("Pending");
+            holder.pending.setText(R.string.Pending);
         }
         if(mDataset[position].isDone()){
-            holder.relativeLayout.setBackgroundColor(Color.TRANSPARENT);
+            holder.relativeLayout.setEnabled(false);
+            holder.relativeLayout.setBackgroundColor(Color.GRAY);
         }
         holder.relativeLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(context, StartSessionActivity.class);
-                intent.putExtra(ACTIVITY_ID, mDataset[position].getActivity());
-                intent.putExtra(RECOMMENDATION_ID, mDataset[position].getUid());
+                intent.putExtra(Constants.ACTIVITY_ID, mDataset[position].getActivity());
+                intent.putExtra(Constants.RECOMMENDATION_ID, mDataset[position].getUid());
                 context.startActivity(intent);
             }
         });
     }
 
-    // Return the size of your dataset (invoked by the layout manager)
+    //Persisted duration in seconds -> displayed in minutes when possible
+    private String toMinutes(Long duration) {
+        int m = (int) (duration/60);
+        int s = (int) (duration%60);
+        if(s >= 30){
+            m++;
+        }
+        return m == 0 ? s + " second(s)" : m + " minute(s)";
+    }
+
     @Override
     public int getItemCount() {
         return mDataset.length;

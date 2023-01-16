@@ -8,8 +8,7 @@
         android:layout_gravity="top | center"
         android:layout_height="50dp"
         android:layout_width="30dp"
-        android:src="@drawable/rope_skipping"
-        android:tint="@color/white"
+        android:src="@drawable/heart_icon"
         android:contentDescription="rope skipping"
         />
 
@@ -19,7 +18,7 @@
         android:layout_height="match_parent"
         android:gravity="center"
         android:textSize="50sp"
-        android:layout_marginBottom="20dp"
+        android:layout_marginBottom="10dp"
         />
 
     <ImageView
@@ -28,9 +27,7 @@
         android:layout_height="50dp"
         android:layout_width="50dp"
         android:src="@drawable/stop_icon"
-        android:background="@color/red"
         android:layout_marginBottom="10dp"
-        android:contentDescription="stop button"
         />
 
 </FrameLayout>

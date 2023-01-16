@@ -13,15 +13,19 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
+import android.widget.TextView;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.Scopes;
+import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.tasks.Task;
+import com.google.android.material.textfield.TextInputLayout;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
@@ -47,45 +51,38 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.work.ExistingPeriodicWorkPolicy;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
+
+import ugent.waves.healthrecommenderapp.Asynctasks.UserAsyncTask;
+import ugent.waves.healthrecommenderapp.HelpClasses.Constants;
+import ugent.waves.healthrecommenderapp.HelpClasses.goalHandler;
+import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
+import ugent.waves.healthrecommenderapp.Persistance.SessionDao;
+import ugent.waves.healthrecommenderapp.Persistance.User;
+import ugent.waves.healthrecommenderapp.Persistance.UserDao;
 
 //<uses-permission android:name="android.permission.USE_CREDENTIALS" />
 //    <uses-permission android:name="android.permission.MANAGE_ACCOUNTS" />
 // <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
-//TODO: wat als user permissies zoals age niet toelaat, alert tonen --> request age permission via google??? people  API
-//TODO: people api: secret van webclient, google sign in kan enkel met webclient??? -> sha updaten?, application name??
-//TODO: sign in doesnt work, door veranderne van pc mss
 public class LoginActivity extends Activity implements View.OnClickListener {
 
-    private static final String TAG = "LoginFragment";
     private healthRecommenderApplication app;
     //permissions
     String[] appPermissions = {
-            //https://developer.android.com/about/versions/10/privacy/changes#physical-activity-recognition
-            //api level above 29 different permission for activity recognition
-            //TODO: werkt ook met api level hoger dn 28? want permission niet in manifest?
-            Build.VERSION.SDK_INT < 29 ? "com.google.android.gms.permission.ACTIVITY_RECOGNITION" : Manifest.permission.ACTIVITY_RECOGNITION,
-            //"com.google.android.gms.permission.ACTIVITY_RECOGNITION",
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.GET_ACCOUNTS
     };
-    private boolean permissionsGranted;
 
-    //constants
-    private static final int RC_SIGN_IN = 1;
-    private static final int PERMISSION_REQUEST = 2;
-    private static final int GOOGLE_FIT_PERMISSIONS_REQUEST_CODE = 3;
-
-
-    //firebase
-    private FirebaseFirestore db;
-    private FirebaseUser user;
-    private FirebaseAuth mAuth;
     private GoogleSignInClient mGoogleSignInClient;
     private GoogleSignInAccount account;
+
+    private TextInputLayout ageView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,24 +91,23 @@ public class LoginActivity extends Activity implements View.OnClickListener {
 
         app = (healthRecommenderApplication) this.getApplicationContext();
 
-        Scope age = new Scope(PeopleServiceScopes.USER_BIRTHDAY_READ);
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
                 .requestProfile()
                 .requestId()
                 .requestServerAuthCode("726533384380-p8e9er5fialjs892tu5c5aub0dgqsbb0.apps.googleusercontent.com")
                 .requestIdToken("726533384380-p8e9er5fialjs892tu5c5aub0dgqsbb0.apps.googleusercontent.com")
-                //.requestIdToken("726533384380-7ratqe860v6dkplnjengumll4ltc3ngg.apps.googleusercontent.com")
-                .requestScopes(age)
                 .build();
 
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
         account = GoogleSignIn.getLastSignedInAccount(this);
         findViewById(R.id.sign_in_button).setOnClickListener(this);
+        ageView = (TextInputLayout) findViewById(R.id.personAge);
+        SignInButton signInButton = findViewById(R.id.sign_in_button);
 
-        //GoogleApiAvailability api = GoogleApiAvailability.getInstance();
-        //int d = api.isGooglePlayServicesAvailable(this);
+        TextView textView = (TextView) signInButton.getChildAt(0);
+        textView.setText(R.string.SignIn);
 
         if(account != null){
             accessApp();
@@ -121,23 +117,43 @@ public class LoginActivity extends Activity implements View.OnClickListener {
     private void accessApp(){
         app.setAccount(account);
         app.setmGoogleSignInClient(mGoogleSignInClient);
-        /*
+
+        //When available set age and set logged in user as current
+        int age =0;
+        if(ageView.getEditText().getText() != null && isNumeric(ageView.getEditText().getText().toString())){
+            age = Integer.parseInt(ageView.getEditText().getText().toString());
+        }
+
+        User u = null;
         try {
-            //TODO: getting profile info doesnt finish
-            Person pr = new GetProfileDetails(account, this, "la").execute().get();
-            List<Birthday> b = pr.getBirthdays();
-            Log.d("d", "d");
+            u = new UserAsyncTask(app.getAppDb(), account.getId(), Constants.GET).execute().get();
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }*/
+        }
+        if(u == null){
+            User newUser = new User();
+            newUser.setGoal((int)Constants.GOAL);
+            newUser.setWeek(0);
+            newUser.setUid(account.getId());
+            newUser.setAge(age != 0 ? age : 25);
+            newUser.setCurrent(true);
+            AsyncTask.execute(() -> app.getAppDb().userDao().insertUser(newUser));
+        } else{
+            if(age != 0){
+                u.setAge(age);
+            }
+            u.setCurrent(true);
+            User finalU = u;
+            AsyncTask.execute(() -> app.getAppDb().userDao().updateUser(finalU));
+        }
         Intent intent = new Intent(this, NavigationActivity.class);
         startActivity(intent);
     }
 
      /*
-    GOOGLE + FIREBASE SIGNIN
+    GOOGLE SIGNIN
      */
 
     @Override
@@ -145,7 +161,7 @@ public class LoginActivity extends Activity implements View.OnClickListener {
         super.onActivityResult(requestCode, resultCode, data);
 
         // Result returned from launching the Intent from GoogleSignInClient.getSignInIntent(...);
-        if (requestCode == RC_SIGN_IN) {
+        if (requestCode == Constants.RC_SIGN_IN) {
             // The Task returned from this call is always completed, no need to attach
             // a listener.
             Task<GoogleSignInAccount> task =
@@ -179,15 +195,9 @@ public class LoginActivity extends Activity implements View.OnClickListener {
         if (!listPermissionsNeeded.isEmpty()) {
             ActivityCompat.requestPermissions(this,
                     listPermissionsNeeded.toArray(new String[listPermissionsNeeded.size()]),
-                    PERMISSION_REQUEST
+                    Constants.PERMISSION_REQUEST
             );
-        }/*else if (!GoogleSignIn.hasPermissions(account, fitnessOptions)) {
-            GoogleSignIn.requestPermissions(
-                    this,
-                    GOOGLE_FIT_PERMISSIONS_REQUEST_CODE,
-                    account,
-                    fitnessOptions);
-        } */else{
+        }else{
             accessApp();
         }
     }
@@ -195,7 +205,7 @@ public class LoginActivity extends Activity implements View.OnClickListener {
     @Override
     public void onRequestPermissionsResult(
             int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if (requestCode == PERMISSION_REQUEST) {
+        if (requestCode == Constants.PERMISSION_REQUEST) {
             HashMap<String, Integer> permissionResults = new HashMap<>();
 
             // Gather permission grant results
@@ -282,132 +292,19 @@ public class LoginActivity extends Activity implements View.OnClickListener {
         return dialog;
     }
 
-
-    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
-        /*
-        Log.e(TAG, "firebaseAuthWithGoogle:" + acct.getIdToken());
-        mAuth = FirebaseAuth.getInstance();
-
-        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
-        mAuth.signInWithCredential(credential)
-                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        if (task.isSuccessful()) {
-                            // Sign in success, update UI with the signed-in user's information
-                            user = mAuth.getCurrentUser();
-                            accessApp();
-                            Log.e(TAG, user.getDisplayName());
-                            Log.d(TAG, "signInWithCredential:success");
-                        } else {
-                            // If sign in fails, display a message to the user.
-                            Log.w(TAG, "signInWithCredential:failure", task.getException());
-                        }
-                    }
-                });*/
-    }
-
     @Override
     public void onClick(View v) {
         Intent intent = mGoogleSignInClient.getSignInIntent();
-        startActivityForResult(intent, RC_SIGN_IN);
+        startActivityForResult(intent, Constants.RC_SIGN_IN);
     }
 
-    static class GetProfileDetails extends AsyncTask<Void, Void, Person> {
-
-        private final GoogleSignInAccount account;
-        private PeopleService ps;
-        private int authError = -1;
-        private WeakReference<Activity> weakAct;
-        private String TAG;
-
-        GetProfileDetails(GoogleSignInAccount account, Activity activity, String TAG) {
-            this.TAG = TAG;
-            this.weakAct = new WeakReference<>(activity);
-            this.account = account;
-            Collection<String> scopes = new ArrayList<>();
-            scopes.add(Scopes.PROFILE);
-
-
-            //GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(this.weakAct.get(), scopes);
-            //credential.setSelectedAccountName(account.getEmail());
-            //credential.setSelectedAccount(account.getAccount());
-
-            HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
-            JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
-
-            // Redirect URL for web based applications.
-            // Can be empty too.
-            String redirectUrl = "urn:ietf:wg:oauth:2.0:oob";
-
-
-            // Exchange auth code for access token
-            GoogleTokenResponse tokenResponse = null;
-            String token = account.getServerAuthCode();
-            try {
-                tokenResponse = new GoogleAuthorizationCodeTokenRequest(
-                        HTTP_TRANSPORT,
-                        JSON_FACTORY,
-                        "726533384380-p8e9er5fialjs892tu5c5aub0dgqsbb0.apps.googleusercontent.com",
-                        "AqOEU2CUJsj7L6gND-8yi1jR",
-                        account.getServerAuthCode(),
-                        null).execute();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            // Then, create a GoogleCredential object using the tokens from GoogleTokenResponse
-            GoogleCredential credential = new GoogleCredential.Builder()
-                    .setClientSecrets("726533384380-p8e9er5fialjs892tu5c5aub0dgqsbb0.apps.googleusercontent.com", "AqOEU2CUJsj7L6gND-8yi1jR")
-                    .setTransport(HTTP_TRANSPORT)
-                    .setJsonFactory(JSON_FACTORY)
-                    .build();
-
-            credential.setFromTokenResponse(tokenResponse);
-/*
-            GoogleCredential credential = new GoogleCredential.Builder()
-                    .setTransport(HTTP_TRANSPORT)
-                    .setJsonFactory(JSON_FACTORY)
-                    .setClientSecrets("726533384380-p8e9er5fialjs892tu5c5aub0dgqsbb0.apps.googleusercontent.com", "AIzaSyBLGLcrbk13p3N5S_4OULdMKOHOzv-WODc")
-                    .build();
-*/
-            ps = new PeopleService.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
-                    .setApplicationName("healthRecommenderApp")
-                    .build();
+    public boolean isNumeric(String str) {
+        try {
+            Integer.parseInt(str);
+            return true;
+        } catch(NumberFormatException e){
+            return false;
         }
-
-        @Override
-        protected Person doInBackground(Void... params) {
-            Person meProfile = null;
-            try {
-                String d = account.getId();
-                String l = account.getIdToken();
-                meProfile = ps
-                        .people()
-                        .get("people/me")
-                        //.get("people/" + account.getId())
-                        .set("personFields","birthdays")
-                        //.setPersonFields("birthdays")
-                        //.setRequestMaskIncludeField("person.birthdays")
-                        .setAccessToken(account.getIdToken())
-                        .setOauthToken(account.getIdToken())
-                        .setKey("726533384380-p8e9er5fialjs892tu5c5aub0dgqsbb0.apps.googleusercontent.com")
-                        .execute();
-                Log.d("", "");
-            } catch (UserRecoverableAuthIOException e) {
-                e.printStackTrace();
-                authError = 0;
-            } catch (GoogleJsonResponseException e) {
-                e.printStackTrace();
-                authError = 1;
-            } catch (IOException e) {
-                e.printStackTrace();
-                authError = 2;
-            } catch (Exception e){
-                e.printStackTrace();
-            }
-            return meProfile;
-        }
-
     }
+
 }

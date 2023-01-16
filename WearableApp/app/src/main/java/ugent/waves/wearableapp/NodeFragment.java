@@ -18,10 +18,12 @@ import androidx.fragment.app.Fragment;
 import androidx.wear.widget.WearableLinearLayoutManager;
 import androidx.wear.widget.WearableRecyclerView;
 
+//Display available nodes
 public class NodeFragment extends Fragment {
 
     private static final String KEY = "DATA";
 
+    //Get nodes as input
     public static Fragment newInstance(ArrayList<String> data) {
         NodeFragment fragment = new NodeFragment();
         Bundle args = new Bundle();
@@ -41,6 +43,7 @@ public class NodeFragment extends Fragment {
 
         final ArrayList<String> items = this.getArguments().getStringArrayList(KEY);
 
+        //call method from parent activity when clicking on node item
         recyclerView.setAdapter(new NodeAdapter(getActivity(), items, new NodeAdapter.AdapterCallback() {
             @Override
             public void onItemClicked(final Integer menuPosition) {

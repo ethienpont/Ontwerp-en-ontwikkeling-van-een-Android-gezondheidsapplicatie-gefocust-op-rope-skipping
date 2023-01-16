@@ -13,6 +13,7 @@ import java.util.ArrayList;
 
 import androidx.recyclerview.widget.RecyclerView;
 
+//Display available nodes
 public class NodeAdapter extends RecyclerView.Adapter<NodeAdapter.RecyclerViewHolder> {
 
     private ArrayList<String> dataSource = new ArrayList<String>();

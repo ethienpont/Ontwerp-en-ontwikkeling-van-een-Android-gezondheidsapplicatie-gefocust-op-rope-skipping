@@ -17,20 +17,20 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import ugent.waves.healthrecommenderapp.Asynctasks.RecommendationAsyncTask;
+import ugent.waves.healthrecommenderapp.HelpClasses.Constants;
 import ugent.waves.healthrecommenderapp.Persistance.AppDatabase;
 import ugent.waves.healthrecommenderapp.Persistance.Recommendation;
 import ugent.waves.healthrecommenderapp.Persistance.RecommendationDao;
 
 public class StartSessionActivity extends AppCompatActivity implements NodeAdapter.RecyclerViewItemClickListener {
-    private static final String ACTIVITY_ID = "ACTIVITY_ID";
-    private static final String RECOMMENDATION_ID = "RECOMMENDATION_ID";
-    private String PATH = "/SESSION_START";
-    private int activity;
     private int recommendationId;
     private healthRecommenderApplication app;
     private NodeClient nodeClient;
     private MessageClient messageClient;
     private NodeDialog nodeDialog;
+    private StartSessionActivity context;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,14 +38,13 @@ public class StartSessionActivity extends AppCompatActivity implements NodeAdapt
         setContentView(R.layout.activity_start_session);
 
         app = (healthRecommenderApplication) getApplicationContext();
-        app.setContext(this);
+        context = this;
         nodeClient = Wearable.getNodeClient(this);
         messageClient = Wearable.getMessageClient(this);
 
         try {
             Intent i = getIntent();
-            activity = i.getIntExtra(ACTIVITY_ID, -1);
-            recommendationId = i.getIntExtra(RECOMMENDATION_ID, -1);
+            recommendationId = i.getIntExtra(Constants.RECOMMENDATION_ID, -1);
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -54,22 +53,21 @@ public class StartSessionActivity extends AppCompatActivity implements NodeAdapt
 
     public void startSession(View view) {
         try {
-            Recommendation r = new RecommendationAsyncTask(this, app.getAppDb(), recommendationId).execute().get();
-            r.setPending(true);
-            AsyncTask.execute(
-                    () -> {app.getAppDb().recommendationDao().updateRecommendation(r);}
-            );
+            Recommendation r = new RecommendationIdAsyncTask(app.getAppDb(), recommendationId).execute().get();
+            if(!r.isPending()){
+                r.setPending(true);
+                new RecommendationAsyncTask(app.getAppDb(),null,Constants.UPDATE, r).execute().get();
+            }
 
             nodeClient.getConnectedNodes()
                     .addOnSuccessListener(new OnSuccessListener<List<Node>>() {
                         @Override
                         public void onSuccess(List<Node> nodes) {
                             try{
-                                NodeAdapter dataAdapter = new NodeAdapter(nodes, (StartSessionActivity) app.getContext());
+                                NodeAdapter dataAdapter = new NodeAdapter(nodes, context);
                                 nodeDialog = new NodeDialog(StartSessionActivity.this, dataAdapter);
 
                                 nodeDialog.show();
-                                //nodeDialog.setCanceledOnTouchOutside(false);
                             } catch(Exception e){
                                 e.printStackTrace();
                             }
@@ -83,9 +81,10 @@ public class StartSessionActivity extends AppCompatActivity implements NodeAdapt
         }
     }
 
+
     @Override
     public void clickOnItem(Node node) {
-        messageClient.sendMessage(node.getId(), PATH, new byte[]{})
+        messageClient.sendMessage(node.getId(), Constants.PATH, new byte[]{})
                 .addOnSuccessListener(new OnSuccessListener<Integer>() {
                     @Override
                     public void onSuccess(Integer integer) {
@@ -98,14 +97,11 @@ public class StartSessionActivity extends AppCompatActivity implements NodeAdapt
         }
     }
 
-    private static class RecommendationAsyncTask extends AsyncTask<Void, Void, Recommendation> {
-        //Prevent leak
-        private WeakReference<Activity> weakActivity;
+    private static class RecommendationIdAsyncTask extends AsyncTask<Void, Void, Recommendation> {
         private AppDatabase db;
         private int id;
 
-        public RecommendationAsyncTask(Activity activity, AppDatabase db, int id) {
-            weakActivity = new WeakReference<>(activity);
+        public RecommendationIdAsyncTask( AppDatabase db, int id) {
             this.db = db;
             this.id = id;
         }
@@ -116,4 +112,5 @@ public class StartSessionActivity extends AppCompatActivity implements NodeAdapt
             return recommendationDao.getRecommendationForId(id);
         }
     }
+
 }

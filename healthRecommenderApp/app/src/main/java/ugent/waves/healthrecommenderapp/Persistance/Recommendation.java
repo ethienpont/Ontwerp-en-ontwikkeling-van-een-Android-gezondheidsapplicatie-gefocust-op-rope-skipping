@@ -9,8 +9,10 @@ import androidx.room.PrimaryKey;
 public class Recommendation {
 
     @PrimaryKey(autoGenerate = true)
-    @NonNull
     private int uid;
+
+    @ColumnInfo(name = "userId")
+    private String userId;
 
     @ColumnInfo(name = "activity")
     private int activity;
@@ -55,7 +57,7 @@ public class Recommendation {
         return uid;
     }
 
-    public void setUid(@NonNull int uid) {
+    public void setUid(int uid) {
         this.uid = uid;
     }
 
@@ -73,5 +75,13 @@ public class Recommendation {
 
     public void setDone(boolean done) {
         this.done = done;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 }
